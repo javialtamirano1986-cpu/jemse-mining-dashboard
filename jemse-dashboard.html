@@ -542,7 +542,7 @@
             const [searchTerm, setSearchTerm] = useState('');
             
             const t = translations[lang];
-            const mapRef = useRef(null);
+            // const mapRef = useRef(null); // No longer needed - using ID directly
             const mapInstanceRef = useRef(null);
             const chartsRef = useRef({});
 
@@ -572,8 +572,8 @@
             }, []);
 
             useEffect(() => {
-                if (mapRef.current && !mapInstanceRef.current && data.length > 0) {
-                    const map = L.map(mapRef.current).setView([-23.5, -66.5], 8);
+                if (!mapInstanceRef.current && data.length > 0) {
+                    const map = L.map('map').setView([-23.5, -66.5], 8);
                     
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap'
@@ -901,7 +901,7 @@
 
                         <div className="map-section">
                             <h2 className="section-title">{t.map}</h2>
-                            <div id="map" ref={mapRef}></div>
+                            <div id="map"></div>
                         </div>
                     </div>
 
