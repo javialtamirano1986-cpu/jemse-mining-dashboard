@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JEMSE Mining Portfolio Dashboard | PDAC 2026</title>
     
+    <!-- Leaflet FIRST -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Then other libraries -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
     
@@ -314,6 +316,7 @@
             height: 600px;
             border-radius: 15px;
             border: 2px solid rgba(0, 168, 232, 0.2);
+            background: #132840;
         }
         
         .map-legend {
@@ -603,16 +606,23 @@
 
             // Load GeoJSON files
             useEffect(() => {
+                console.log('Starting to load GeoJSON files...');
                 Promise.all([
-                    fetch('areas_enriched.geojson').then(r => r.json()),
-                    fetch('Departamentos.geojson').then(r => r.json())
+                    fetch('areas_enriched.geojson').then(r => {
+                        console.log('Areas GeoJSON response:', r.status);
+                        return r.json();
+                    }),
+                    fetch('Departamentos.geojson').then(r => {
+                        console.log('Departamentos GeoJSON response:', r.status);
+                        return r.json();
+                    })
                 ])
                 .then(([areas, deptos]) => {
                     console.log('GeoJSON loaded:', areas.features.length, 'areas');
+                    console.log('Departamentos loaded:', deptos.features.length, 'departments');
                     setGeojsonData(areas);
                     setDepartamentos(deptos);
                     
-                    // Extract data from GeoJSON for stats/charts
                     const extractedData = areas.features.map(f => f.properties);
                     setData(extractedData);
                     setLoading(false);
@@ -626,41 +636,65 @@
 
             // Initialize map
             useEffect(() => {
-                if (mapRef.current && !mapInstanceRef.current && geojsonData) {
+                if (mapRef.current && !mapInstanceRef.current && geojsonData && typeof L !== 'undefined') {
                     console.log('Initializing map...');
-                    const map = L.map(mapRef.current).setView([-23.5, -66.0], 8);
+                    console.log('Map container element:', mapRef.current);
+                    console.log('Leaflet library loaded:', typeof L);
                     
-                    // Base layer - OpenStreetMap
-                    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(map);
-                    
-                    // Terrain layer
-                    const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenTopoMap contributors'
-                    });
-                    
-                    // Satellite layer
-                    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        attribution: '© Esri'
-                    });
-                    
-                    layersRef.current = {
-                        osm: osmLayer,
-                        terrain: terrainLayer,
-                        satellite: satelliteLayer,
-                        mining: L.layerGroup().addTo(map),
-                        departments: L.layerGroup().addTo(map)
-                    };
-                    
-                    mapInstanceRef.current = map;
-                    console.log('Map initialized');
+                    try {
+                        const map = L.map(mapRef.current, {
+                            center: [-23.5, -66.0],
+                            zoom: 8,
+                            zoomControl: true
+                        });
+                        
+                        console.log('Map object created:', map);
+                        
+                        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors',
+                            maxZoom: 19
+                        }).addTo(map);
+                        
+                        console.log('Base layer added');
+                        
+                        const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenTopoMap contributors',
+                            maxZoom: 17
+                        });
+                        
+                        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: '© Esri',
+                            maxZoom: 19
+                        });
+                        
+                        layersRef.current = {
+                            osm: osmLayer,
+                            terrain: terrainLayer,
+                            satellite: satelliteLayer,
+                            mining: L.layerGroup().addTo(map),
+                            departments: L.layerGroup().addTo(map)
+                        };
+                        
+                        mapInstanceRef.current = map;
+                        console.log('Map initialized successfully!');
+                        
+                        // Force map to invalidate size after a short delay
+                        setTimeout(() => {
+                            map.invalidateSize();
+                            console.log('Map size invalidated');
+                        }, 100);
+                        
+                    } catch (e) {
+                        console.error('Error initializing map:', e);
+                        setError('Map initialization failed: ' + e.message);
+                    }
                 }
             }, [geojsonData]);
 
             // Update departments layer
             useEffect(() => {
                 if (mapInstanceRef.current && layersRef.current.departments && departamentos) {
+                    console.log('Updating departments layer...');
                     layersRef.current.departments.clearLayers();
                     
                     if (mapLayers.departments) {
@@ -676,12 +710,12 @@
                                 if (feature.properties && feature.properties.DEPARTAMEN) {
                                     layer.bindTooltip(feature.properties.DEPARTAMEN, {
                                         permanent: false,
-                                        direction: 'center',
-                                        className: 'dept-label'
+                                        direction: 'center'
                                     });
                                 }
                             }
                         }).addTo(layersRef.current.departments);
+                        console.log('Departments layer updated');
                     }
                 }
             }, [departamentos, mapLayers.departments]);
@@ -689,12 +723,10 @@
             // Update base map layers
             useEffect(() => {
                 if (mapInstanceRef.current && layersRef.current.osm) {
-                    // Remove all base layers
                     layersRef.current.osm.remove();
                     layersRef.current.terrain.remove();
                     layersRef.current.satellite.remove();
                     
-                    // Add selected layer
                     if (mapLayers.terrain) {
                         layersRef.current.terrain.addTo(mapInstanceRef.current);
                     } else if (mapLayers.satellite) {
@@ -714,18 +746,17 @@
                     const filtered = getFilteredData();
                     console.log('Showing', filtered.length, 'areas');
                     
-                    // Create map of expediente to full data for popup
                     const dataMap = {};
                     filtered.forEach(item => {
                         dataMap[item.expediente] = item;
                     });
                     
-                    // Filter GeoJSON features
                     const filteredFeatures = geojsonData.features.filter(f => 
                         dataMap[f.properties.expediente]
                     );
                     
-                    // Add polygons
+                    console.log('Adding', filteredFeatures.length, 'polygons to map');
+                    
                     L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
                         style: (feature) => {
                             const isDisponible = feature.properties.estado?.toLowerCase().includes('disponible') ||
@@ -773,11 +804,13 @@
                         }
                     }).addTo(layersRef.current.mining);
                     
-                    // Adjust bounds if there are features
+                    console.log('Polygons added to map');
+                    
                     if (filteredFeatures.length > 0) {
                         const bounds = layersRef.current.mining.getBounds();
                         if (bounds.isValid()) {
                             mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
+                            console.log('Map bounds adjusted');
                         }
                     }
                 }
@@ -819,7 +852,6 @@
             const updateCharts = () => {
                 const filtered = getFilteredData();
                 
-                // Mineral distribution
                 const mineralCounts = {};
                 filtered.forEach(area => {
                     const mineral = area.tipo_miner || 'Unknown';
@@ -865,7 +897,6 @@
                     });
                 }
                 
-                // Cluster distribution
                 const clusterCounts = {};
                 filtered.forEach(area => {
                     const cluster = area.cluster || 'Sin Cluster';
