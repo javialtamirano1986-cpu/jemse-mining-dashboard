@@ -282,10 +282,71 @@
             letter-spacing: 2px;
         }
         
+        .map-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .map-control-btn {
+            padding: 8px 15px;
+            background: rgba(0, 168, 232, 0.2);
+            border: 1px solid var(--jemse-cyan);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        
+        .map-control-btn:hover {
+            background: rgba(0, 168, 232, 0.4);
+        }
+        
+        .map-control-btn.active {
+            background: var(--jemse-cyan);
+            font-weight: 600;
+        }
+        
         #map {
-            height: 500px;
+            height: 600px;
             border-radius: 15px;
             border: 2px solid rgba(0, 168, 232, 0.2);
+        }
+        
+        .map-legend {
+            background: rgba(26, 53, 82, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 168, 232, 0.3);
+            margin-top: 15px;
+        }
+        
+        .legend-title {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 1.1em;
+            color: var(--jemse-cyan);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid white;
+            opacity: 0.7;
         }
         
         .charts-grid {
@@ -375,31 +436,16 @@
             display: inline-block;
         }
         
-        .status-available {
+        .status-disponible {
             background: rgba(76, 175, 80, 0.2);
             color: #81C784;
             border: 1px solid #4CAF50;
         }
         
-        .status-not-available {
+        .status-no-disponible {
             background: rgba(255, 107, 53, 0.2);
             color: #FF8C5A;
             border: 1px solid var(--gov-orange);
-        }
-        
-        .map-link {
-            display: inline-block;
-            padding: 5px 12px;
-            background: var(--jemse-cyan);
-            color: white;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 0.85em;
-            transition: all 0.2s ease;
-        }
-        
-        .map-link:hover {
-            background: var(--jemse-light);
         }
         
         .loading {
@@ -471,155 +517,273 @@
                 title: "Mining Portfolio Dashboard",
                 subtitle: "Jujuy Province - Argentina | PDAC 2026",
                 filters: "Filters",
-                availability: "Availability",
                 cluster: "Cluster",
                 department: "Department",
                 mineral: "Mineral Type",
+                estado: "Status",
                 resetFilters: "Reset Filters",
                 allOptions: "All",
-                available: "Available",
-                notAvailable: "Not Available",
-                map: "Mining Areas Map",
+                map: "Mining Areas Map - Jujuy Province",
+                mapLayers: "Map Layers",
+                departments: "Departments",
+                terrain: "Terrain",
+                satellite: "Satellite",
+                legend: "Legend",
                 chartMineral: "Distribution by Mineral Type",
                 chartCluster: "Distribution by Cluster",
                 totalAreas: "Total Areas",
-                totalHectares: "Total Hectares",
-                availableAreas: "Available Areas",
-                avgHectares: "Avg. ha/Area",
+                totalHectares: "Total Hectares (ha)",
                 dataTable: "Mining Areas Data",
                 search: "Search...",
                 expedient: "Expedient",
-                state: "State",
-                hectares: "Hectares",
-                viewMap: "View Map",
+                area: "Area (ha)",
                 loading: "Loading data...",
-                error: "Error loading data. Please check the Google Sheet URL."
+                error: "Error loading data",
+                areasShown: "areas shown on map",
+                disponible: "Available",
+                noDisponible: "Not Available"
             },
             es: {
                 title: "Panel de Cartera Minera",
                 subtitle: "Provincia de Jujuy - Argentina | PDAC 2026",
                 filters: "Filtros",
-                availability: "Disponibilidad",
                 cluster: "Cluster",
                 department: "Departamento",
                 mineral: "Tipo de Mineral",
+                estado: "Estado",
                 resetFilters: "Restablecer Filtros",
                 allOptions: "Todos",
-                available: "Disponible",
-                notAvailable: "No Disponible",
-                map: "Mapa de Áreas Mineras",
+                map: "Mapa de Áreas Mineras - Provincia de Jujuy",
+                mapLayers: "Capas del Mapa",
+                departments: "Departamentos",
+                terrain: "Terreno",
+                satellite: "Satélite",
+                legend: "Leyenda",
                 chartMineral: "Distribución por Tipo de Mineral",
                 chartCluster: "Distribución por Cluster",
                 totalAreas: "Áreas Totales",
-                totalHectares: "Hectáreas Totales",
-                availableAreas: "Áreas Disponibles",
-                avgHectares: "Prom. ha/Área",
+                totalHectares: "Hectáreas Totales (ha)",
                 dataTable: "Datos de Áreas Mineras",
                 search: "Buscar...",
                 expedient: "Expediente",
-                state: "Estado",
-                hectares: "Hectáreas",
-                viewMap: "Ver Mapa",
+                area: "Área (ha)",
                 loading: "Cargando datos...",
-                error: "Error al cargar datos. Por favor verifica la URL del Google Sheet."
+                error: "Error al cargar datos",
+                areasShown: "áreas mostradas en el mapa",
+                disponible: "Disponible",
+                noDisponible: "No Disponible"
             }
         };
-
-        // IMPORTANTE: Actualiza esta URL con la URL correcta de tu Google Sheet publicado
-        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRVdJxnyVnfoAX-CH0CyAMLQvandbzM6yVhRgZFXKI4qn1iWh67rEDeb7VLaRJyGCiFmfzWYnFqM9Xl/pub?gid=0&single=true&output=csv';
 
         function Dashboard() {
             const [lang, setLang] = useState('en');
             const [data, setData] = useState([]);
+            const [geojsonData, setGeojsonData] = useState(null);
+            const [departamentos, setDepartamentos] = useState(null);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [filters, setFilters] = useState({
-                availability: 'all',
                 cluster: 'all',
                 department: 'all',
-                mineral: 'all'
+                mineral: 'all',
+                estado: 'all'
             });
             const [searchTerm, setSearchTerm] = useState('');
+            const [mapLayers, setMapLayers] = useState({
+                departments: true,
+                terrain: false,
+                satellite: false
+            });
             
             const t = translations[lang];
-            // const mapRef = useRef(null); // No longer needed - using ID directly
+            const mapRef = useRef(null);
             const mapInstanceRef = useRef(null);
+            const layersRef = useRef({});
             const chartsRef = useRef({});
 
+            // Load GeoJSON files
             useEffect(() => {
-                console.log('Intentando cargar datos desde:', GOOGLE_SHEET_URL);
-                
-                // Usar PapaParse para mejor manejo de CSV
-                Papa.parse(GOOGLE_SHEET_URL, {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        console.log('Datos cargados:', results.data.length, 'filas');
-                        const filteredData = results.data.filter(row => 
-                            row['N° Exped.'] && row['Legal Status'] === 'Cateo'
-                        );
-                        console.log('Datos filtrados:', filteredData.length, 'áreas mineras');
-                        setData(filteredData);
-                        setLoading(false);
-                    },
-                    error: function(err) {
-                        console.error('Error al cargar CSV:', err);
-                        setError(err.message);
-                        setLoading(false);
-                    }
+                Promise.all([
+                    fetch('areas_enriched.geojson').then(r => r.json()),
+                    fetch('Departamentos.geojson').then(r => r.json())
+                ])
+                .then(([areas, deptos]) => {
+                    console.log('GeoJSON loaded:', areas.features.length, 'areas');
+                    setGeojsonData(areas);
+                    setDepartamentos(deptos);
+                    
+                    // Extract data from GeoJSON for stats/charts
+                    const extractedData = areas.features.map(f => f.properties);
+                    setData(extractedData);
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error('Error loading GeoJSON:', err);
+                    setError(err.message);
+                    setLoading(false);
                 });
             }, []);
 
+            // Initialize map
             useEffect(() => {
-                if (!mapInstanceRef.current && data.length > 0) {
-                    const map = L.map('map').setView([-23.5, -66.5], 8);
+                if (mapRef.current && !mapInstanceRef.current && geojsonData) {
+                    console.log('Initializing map...');
+                    const map = L.map(mapRef.current).setView([-23.5, -66.0], 8);
                     
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
+                    // Base layer - OpenStreetMap
+                    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
                     }).addTo(map);
                     
-                    mapInstanceRef.current = map;
-                }
-            }, [data]);
-
-            useEffect(() => {
-                if (mapInstanceRef.current && data.length > 0) {
-                    mapInstanceRef.current.eachLayer(layer => {
-                        if (layer instanceof L.Marker) {
-                            mapInstanceRef.current.removeLayer(layer);
-                        }
+                    // Terrain layer
+                    const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenTopoMap contributors'
                     });
                     
+                    // Satellite layer
+                    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: '© Esri'
+                    });
+                    
+                    layersRef.current = {
+                        osm: osmLayer,
+                        terrain: terrainLayer,
+                        satellite: satelliteLayer,
+                        mining: L.layerGroup().addTo(map),
+                        departments: L.layerGroup().addTo(map)
+                    };
+                    
+                    mapInstanceRef.current = map;
+                    console.log('Map initialized');
+                }
+            }, [geojsonData]);
+
+            // Update departments layer
+            useEffect(() => {
+                if (mapInstanceRef.current && layersRef.current.departments && departamentos) {
+                    layersRef.current.departments.clearLayers();
+                    
+                    if (mapLayers.departments) {
+                        L.geoJSON(departamentos, {
+                            style: {
+                                color: '#00A8E8',
+                                weight: 2,
+                                opacity: 0.6,
+                                fillColor: 'transparent',
+                                fillOpacity: 0
+                            },
+                            onEachFeature: (feature, layer) => {
+                                if (feature.properties && feature.properties.DEPARTAMEN) {
+                                    layer.bindTooltip(feature.properties.DEPARTAMEN, {
+                                        permanent: false,
+                                        direction: 'center',
+                                        className: 'dept-label'
+                                    });
+                                }
+                            }
+                        }).addTo(layersRef.current.departments);
+                    }
+                }
+            }, [departamentos, mapLayers.departments]);
+
+            // Update base map layers
+            useEffect(() => {
+                if (mapInstanceRef.current && layersRef.current.osm) {
+                    // Remove all base layers
+                    layersRef.current.osm.remove();
+                    layersRef.current.terrain.remove();
+                    layersRef.current.satellite.remove();
+                    
+                    // Add selected layer
+                    if (mapLayers.terrain) {
+                        layersRef.current.terrain.addTo(mapInstanceRef.current);
+                    } else if (mapLayers.satellite) {
+                        layersRef.current.satellite.addTo(mapInstanceRef.current);
+                    } else {
+                        layersRef.current.osm.addTo(mapInstanceRef.current);
+                    }
+                }
+            }, [mapLayers.terrain, mapLayers.satellite]);
+
+            // Update mining areas polygons
+            useEffect(() => {
+                if (mapInstanceRef.current && layersRef.current.mining && geojsonData) {
+                    console.log('Updating mining areas...');
+                    layersRef.current.mining.clearLayers();
+                    
                     const filtered = getFilteredData();
-                    filtered.forEach((area, idx) => {
-                        if (area['Satellite Map']) {
-                            const iconColor = area.State === 'Available' ? '#4CAF50' : '#FF6B35';
-                            const icon = L.divIcon({
-                                className: 'custom-marker',
-                                html: `<div style="background: ${iconColor}; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
-                                iconSize: [15, 15]
+                    console.log('Showing', filtered.length, 'areas');
+                    
+                    // Create map of expediente to full data for popup
+                    const dataMap = {};
+                    filtered.forEach(item => {
+                        dataMap[item.expediente] = item;
+                    });
+                    
+                    // Filter GeoJSON features
+                    const filteredFeatures = geojsonData.features.filter(f => 
+                        dataMap[f.properties.expediente]
+                    );
+                    
+                    // Add polygons
+                    L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
+                        style: (feature) => {
+                            const isDisponible = feature.properties.estado?.toLowerCase().includes('disponible') ||
+                                                feature.properties.estado?.toLowerCase().includes('vacante');
+                            return {
+                                fillColor: isDisponible ? '#4CAF50' : '#FF6B35',
+                                fillOpacity: 0.4,
+                                color: isDisponible ? '#2E7D32' : '#D84315',
+                                weight: 2,
+                                opacity: 0.8
+                            };
+                        },
+                        onEachFeature: (feature, layer) => {
+                            const props = feature.properties;
+                            const isDisponible = props.estado?.toLowerCase().includes('disponible') ||
+                                                props.estado?.toLowerCase().includes('vacante');
+                            
+                            const popupContent = `
+                                <div style="font-family: 'Rajdhani', sans-serif; min-width: 280px; padding: 10px;">
+                                    <h3 style="color: #002855; font-size: 1.4em; margin-bottom: 12px; border-bottom: 2px solid #00A8E8; padding-bottom: 5px;">
+                                        ${props.expediente || 'N/A'}
+                                    </h3>
+                                    ${props.nombre ? `<p style="margin: 5px 0;"><strong>Nombre:</strong> ${props.nombre}</p>` : ''}
+                                    ${props.cluster ? `<p style="margin: 5px 0;"><strong>Cluster:</strong> ${props.cluster}</p>` : ''}
+                                    <p style="margin: 5px 0;"><strong>${t.department}:</strong> ${props.depto || 'N/A'}</p>
+                                    <p style="margin: 5px 0;"><strong>${t.mineral}:</strong> ${props.tipo_miner || 'N/A'}</p>
+                                    <p style="margin: 5px 0;"><strong>${t.area}:</strong> ${props.area ? props.area.toLocaleString() : 'N/A'} ha</p>
+                                    <p style="margin: 5px 0;"><strong>${t.estado}:</strong> 
+                                        <span style="color: ${isDisponible ? '#4CAF50' : '#FF6B35'}; font-weight: bold;">
+                                            ${props.estado || 'N/A'}
+                                        </span>
+                                    </p>
+                                </div>
+                            `;
+                            
+                            layer.bindPopup(popupContent);
+                            
+                            layer.on('mouseover', function() {
+                                this.setStyle({ fillOpacity: 0.7, weight: 3 });
                             });
                             
-                            const lat = -23.5 + (Math.random() - 0.5) * 2;
-                            const lng = -66.5 + (Math.random() - 0.5) * 2;
-                            
-                            const marker = L.marker([lat, lng], { icon }).addTo(mapInstanceRef.current);
-                            marker.bindPopup(`
-                                <div style="font-family: 'Rajdhani', sans-serif; min-width: 200px;">
-                                    <strong style="color: #002855; font-size: 1.1em;">${area['N° Exped.']}</strong><br>
-                                    <strong>Cluster:</strong> ${area.Cluster}<br>
-                                    <strong>${t.hectares}:</strong> ${area.Hectares}<br>
-                                    <strong>${t.mineral}:</strong> ${area['Mineralogical Potential']}<br>
-                                    <strong>${t.state}:</strong> ${area.State}<br>
-                                    <a href="${area['Satellite Map']}" target="_blank" style="color: #00A8E8; font-weight: bold;">📍 ${t.viewMap}</a>
-                                </div>
-                            `);
+                            layer.on('mouseout', function() {
+                                this.setStyle({ fillOpacity: 0.4, weight: 2 });
+                            });
                         }
-                    });
+                    }).addTo(layersRef.current.mining);
+                    
+                    // Adjust bounds if there are features
+                    if (filteredFeatures.length > 0) {
+                        const bounds = layersRef.current.mining.getBounds();
+                        if (bounds.isValid()) {
+                            mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
+                        }
+                    }
                 }
-            }, [filters, data, searchTerm, lang]);
+            }, [filters, geojsonData, searchTerm, lang]);
 
+            // Update charts
             useEffect(() => {
                 if (data.length > 0) {
                     updateCharts();
@@ -628,17 +792,23 @@
 
             const getFilteredData = () => {
                 return data.filter(area => {
-                    if (filters.availability !== 'all' && area.State !== filters.availability) return false;
-                    if (filters.cluster !== 'all' && area.Cluster !== filters.cluster) return false;
-                    if (filters.department !== 'all' && area.Departamento !== filters.department) return false;
-                    if (filters.mineral !== 'all' && area['Mineralogical Potential'] !== filters.mineral) return false;
+                    if (filters.cluster !== 'all' && area.cluster !== filters.cluster) return false;
+                    if (filters.department !== 'all' && area.depto !== filters.department) return false;
+                    if (filters.mineral !== 'all' && area.tipo_miner !== filters.mineral) return false;
+                    if (filters.estado !== 'all') {
+                        const isDisponible = area.estado?.toLowerCase().includes('disponible') ||
+                                            area.estado?.toLowerCase().includes('vacante');
+                        if (filters.estado === 'disponible' && !isDisponible) return false;
+                        if (filters.estado === 'no-disponible' && isDisponible) return false;
+                    }
                     
                     if (searchTerm) {
                         const search = searchTerm.toLowerCase();
                         return (
-                            area['N° Exped.']?.toLowerCase().includes(search) ||
-                            area.Cluster?.toLowerCase().includes(search) ||
-                            area.Departamento?.toLowerCase().includes(search)
+                            area.expediente?.toLowerCase().includes(search) ||
+                            area.cluster?.toLowerCase().includes(search) ||
+                            area.depto?.toLowerCase().includes(search) ||
+                            area.tipo_miner?.toLowerCase().includes(search)
                         );
                     }
                     
@@ -649,9 +819,10 @@
             const updateCharts = () => {
                 const filtered = getFilteredData();
                 
+                // Mineral distribution
                 const mineralCounts = {};
                 filtered.forEach(area => {
-                    const mineral = area['Mineralogical Potential'] || 'Unknown';
+                    const mineral = area.tipo_miner || 'Unknown';
                     mineralCounts[mineral] = (mineralCounts[mineral] || 0) + 1;
                 });
                 
@@ -664,10 +835,10 @@
                     chartsRef.current.mineralChart = new Chart(ctxMineral, {
                         type: 'bar',
                         data: {
-                            labels: Object.keys(mineralCounts),
+                            labels: Object.keys(mineralCounts).slice(0, 10),
                             datasets: [{
                                 label: t.chartMineral,
-                                data: Object.values(mineralCounts),
+                                data: Object.values(mineralCounts).slice(0, 10),
                                 backgroundColor: 'rgba(0, 168, 232, 0.7)',
                                 borderColor: 'rgba(0, 168, 232, 1)',
                                 borderWidth: 2
@@ -694,9 +865,10 @@
                     });
                 }
                 
+                // Cluster distribution
                 const clusterCounts = {};
                 filtered.forEach(area => {
-                    const cluster = area.Cluster || 'Unknown';
+                    const cluster = area.cluster || 'Sin Cluster';
                     clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
                 });
                 
@@ -743,17 +915,13 @@
             const getStats = () => {
                 const filtered = getFilteredData();
                 const totalHectares = filtered.reduce((sum, area) => {
-                    const hectares = parseFloat(area.Hectares?.replace(',', '') || 0);
+                    const hectares = parseFloat(area.area || 0);
                     return sum + hectares;
                 }, 0);
-                const availableCount = filtered.filter(a => a.State === 'Available').length;
-                const avgHectares = filtered.length > 0 ? (totalHectares / filtered.length).toFixed(0) : 0;
                 
                 return {
                     total: filtered.length,
-                    totalHectares: totalHectares.toLocaleString('en-US', { maximumFractionDigits: 0 }),
-                    available: availableCount,
-                    avgHectares: avgHectares
+                    totalHectares: totalHectares.toLocaleString('en-US', { maximumFractionDigits: 0 })
                 };
             };
 
@@ -764,12 +932,27 @@
 
             const resetFilters = () => {
                 setFilters({
-                    availability: 'all',
                     cluster: 'all',
                     department: 'all',
-                    mineral: 'all'
+                    mineral: 'all',
+                    estado: 'all'
                 });
                 setSearchTerm('');
+            };
+
+            const toggleMapLayer = (layer) => {
+                if (layer === 'terrain' || layer === 'satellite') {
+                    setMapLayers({
+                        ...mapLayers,
+                        terrain: layer === 'terrain' ? !mapLayers.terrain : false,
+                        satellite: layer === 'satellite' ? !mapLayers.satellite : false
+                    });
+                } else {
+                    setMapLayers({
+                        ...mapLayers,
+                        [layer]: !mapLayers[layer]
+                    });
+                }
             };
 
             if (loading) {
@@ -789,7 +972,6 @@
                         <div className="error-message">
                             <h2>⚠️ {t.error}</h2>
                             <p style={{marginTop: '10px'}}>Error: {error}</p>
-                            <p style={{marginTop: '10px'}}>URL: {GOOGLE_SHEET_URL}</p>
                         </div>
                     </div>
                 );
@@ -804,7 +986,8 @@
                         <div className="header-content">
                             <div className="logos">
                                 <img src="Jemse_Logo_Horizontal_Negativo.jpg" alt="JEMSE" className="logo-img" />
-                                <img src="01_-_Gob_-_Logo_Original_Positivo.png" alt="Gobierno de Jujuy" className="logo-img" style={{background: 'white', padding: '5px', borderRadius: '5px'}} />
+                                <img src="01_-_Gob_-_Logo_Original_Positivo.png" alt="Gobierno de Jujuy" className="logo-img" 
+                                     style={{background: 'white', padding: '5px', borderRadius: '5px'}} />
                             </div>
                             <div className="header-title">
                                 <h1>{t.title}</h1>
@@ -825,14 +1008,6 @@
                             <div className="stat-label">{t.totalHectares}</div>
                             <div className="stat-value">{stats.totalHectares}</div>
                         </div>
-                        <div className="stat-card">
-                            <div className="stat-label">{t.availableAreas}</div>
-                            <div className="stat-value">{stats.available}</div>
-                        </div>
-                        <div className="stat-card">
-                            <div className="stat-label">{t.avgHectares}</div>
-                            <div className="stat-value">{stats.avgHectares}</div>
-                        </div>
                     </div>
 
                     <div className="main-grid">
@@ -840,15 +1015,15 @@
                             <h2 className="filters-title">{t.filters}</h2>
                             
                             <div className="filter-group">
-                                <label className="filter-label">{t.availability}</label>
+                                <label className="filter-label">{t.estado}</label>
                                 <select 
                                     className="filter-select"
-                                    value={filters.availability}
-                                    onChange={(e) => setFilters({...filters, availability: e.target.value})}
+                                    value={filters.estado}
+                                    onChange={(e) => setFilters({...filters, estado: e.target.value})}
                                 >
                                     <option value="all">{t.allOptions}</option>
-                                    <option value="Available">{t.available}</option>
-                                    <option value="Not Available">{t.notAvailable}</option>
+                                    <option value="disponible">{t.disponible}</option>
+                                    <option value="no-disponible">{t.noDisponible}</option>
                                 </select>
                             </div>
 
@@ -860,7 +1035,7 @@
                                     onChange={(e) => setFilters({...filters, cluster: e.target.value})}
                                 >
                                     <option value="all">{t.allOptions}</option>
-                                    {getUniqueValues('Cluster').map(cluster => (
+                                    {getUniqueValues('cluster').map(cluster => (
                                         <option key={cluster} value={cluster}>{cluster}</option>
                                     ))}
                                 </select>
@@ -874,7 +1049,7 @@
                                     onChange={(e) => setFilters({...filters, department: e.target.value})}
                                 >
                                     <option value="all">{t.allOptions}</option>
-                                    {getUniqueValues('Departamento').map(dept => (
+                                    {getUniqueValues('depto').map(dept => (
                                         <option key={dept} value={dept}>{dept}</option>
                                     ))}
                                 </select>
@@ -888,7 +1063,7 @@
                                     onChange={(e) => setFilters({...filters, mineral: e.target.value})}
                                 >
                                     <option value="all">{t.allOptions}</option>
-                                    {getUniqueValues('Mineralogical Potential').map(mineral => (
+                                    {getUniqueValues('tipo_miner').map(mineral => (
                                         <option key={mineral} value={mineral}>{mineral}</option>
                                     ))}
                                 </select>
@@ -901,7 +1076,47 @@
 
                         <div className="map-section">
                             <h2 className="section-title">{t.map}</h2>
-                            <div id="map"></div>
+                            
+                            <div className="map-controls">
+                                <div style={{fontSize: '0.9em', color: 'var(--text-secondary)', marginRight: '10px'}}>
+                                    {t.mapLayers}:
+                                </div>
+                                <button 
+                                    className={`map-control-btn ${mapLayers.departments ? 'active' : ''}`}
+                                    onClick={() => toggleMapLayer('departments')}
+                                >
+                                    {t.departments}
+                                </button>
+                                <button 
+                                    className={`map-control-btn ${mapLayers.terrain ? 'active' : ''}`}
+                                    onClick={() => toggleMapLayer('terrain')}
+                                >
+                                    {t.terrain}
+                                </button>
+                                <button 
+                                    className={`map-control-btn ${mapLayers.satellite ? 'active' : ''}`}
+                                    onClick={() => toggleMapLayer('satellite')}
+                                >
+                                    {t.satellite}
+                                </button>
+                            </div>
+                            
+                            <div id="map" ref={mapRef}></div>
+                            
+                            <div className="map-legend">
+                                <div className="legend-title">{t.legend}</div>
+                                <div className="legend-item">
+                                    <div className="legend-color" style={{background: '#4CAF50'}}></div>
+                                    <span>{t.disponible}</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-color" style={{background: '#FF6B35'}}></div>
+                                    <span>{t.noDisponible}</span>
+                                </div>
+                                <div style={{marginTop: '10px', fontSize: '0.9em', color: '#B0C4DE'}}>
+                                    📍 {filteredData.length} {t.areasShown}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -938,33 +1153,29 @@
                                         <th>{t.cluster}</th>
                                         <th>{t.department}</th>
                                         <th>{t.mineral}</th>
-                                        <th>{t.hectares}</th>
-                                        <th>{t.state}</th>
-                                        <th>Map</th>
+                                        <th>{t.area}</th>
+                                        <th>{t.estado}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredData.map((area, idx) => (
-                                        <tr key={idx}>
-                                            <td>{area['N° Exped.']}</td>
-                                            <td>{area.Cluster}</td>
-                                            <td>{area.Departamento}</td>
-                                            <td>{area['Mineralogical Potential']}</td>
-                                            <td>{area.Hectares}</td>
-                                            <td>
-                                                <span className={`status-badge ${area.State === 'Available' ? 'status-available' : 'status-not-available'}`}>
-                                                    {area.State === 'Available' ? t.available : t.notAvailable}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {area['Satellite Map'] && (
-                                                    <a href={area['Satellite Map']} target="_blank" rel="noopener noreferrer" className="map-link">
-                                                        {t.viewMap}
-                                                    </a>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {filteredData.map((area, idx) => {
+                                        const isDisponible = area.estado?.toLowerCase().includes('disponible') ||
+                                                            area.estado?.toLowerCase().includes('vacante');
+                                        return (
+                                            <tr key={idx}>
+                                                <td>{area.expediente}</td>
+                                                <td>{area.cluster || '-'}</td>
+                                                <td>{area.depto}</td>
+                                                <td>{area.tipo_miner}</td>
+                                                <td>{area.area ? area.area.toLocaleString() : '-'}</td>
+                                                <td>
+                                                    <span className={`status-badge ${isDisponible ? 'status-disponible' : 'status-no-disponible'}`}>
+                                                        {area.estado}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
