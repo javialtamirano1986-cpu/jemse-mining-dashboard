@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JEMSE Mining Dashboard | PDAC 2026</title>
+    <title>JEMSE Mining Portfolio Dashboard | PDAC 2026</title>
     
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -33,24 +33,74 @@
         
         header {
             background: linear-gradient(135deg, #002855 0%, #1A3552 100%);
-            padding: 30px;
+            padding: 25px 35px;
             border-radius: 15px;
             margin-bottom: 25px;
-            text-align: center;
             border: 1px solid rgba(0, 168, 232, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .logos {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+        
+        .logo-img {
+            height: 50px;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+        
+        .logo-gov {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .header-center {
+            flex: 1;
+            text-align: center;
         }
         
         h1 {
-            font-size: 2.5em;
+            font-size: 2.2em;
             background: linear-gradient(135deg, #00A8E8, #4FC3F7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
         .subtitle {
             color: #B0C4DE;
-            font-size: 1.1em;
+            font-size: 1em;
+        }
+        
+        .lang-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00A8E8;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        
+        .lang-toggle:hover {
+            background: #00A8E8;
+            transform: translateY(-2px);
         }
         
         .stats {
@@ -128,6 +178,10 @@
             border-color: #00A8E8;
         }
         
+        select[multiple] {
+            min-height: 100px;
+        }
+        
         .reset-btn {
             width: 100%;
             padding: 12px;
@@ -162,6 +216,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         
         .map-btn {
@@ -213,7 +268,7 @@
         
         .charts {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
             gap: 25px;
             margin-bottom: 25px;
         }
@@ -233,7 +288,7 @@
         }
         
         .chart-container {
-            height: 300px;
+            height: 400px;
             position: relative;
         }
         
@@ -248,92 +303,114 @@
             .main-grid {
                 grid-template-columns: 1fr;
             }
+            
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .charts {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>JEMSE MINING PORTFOLIO</h1>
-            <div class="subtitle">Jujuy Province - Argentina | PDAC 2026</div>
+            <div class="logos">
+                <img src="Jemse_Logo_Horizontal_Negativo.jpg" alt="JEMSE" class="logo-img">
+                <img src="01_-_Gob_-_Logo_Original_Positivo.png" alt="Gobierno de Jujuy" class="logo-img logo-gov">
+            </div>
+            <div class="header-center">
+                <h1 id="mainTitle">JEMSE MINING PORTFOLIO</h1>
+                <div class="subtitle" id="subtitle">Jujuy Province - Argentina | PDAC 2026</div>
+            </div>
+            <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">Español</button>
         </header>
 
         <div class="stats" id="stats">
             <div class="stat-card">
-                <div class="stat-label">Total Areas</div>
+                <div class="stat-label" id="labelTotal">Total Areas</div>
                 <div class="stat-value" id="totalAreas">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Total Hectares</div>
+                <div class="stat-label" id="labelHectares">Total Hectares</div>
                 <div class="stat-value" id="totalHectares">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Available</div>
+                <div class="stat-label" id="labelAvailable">Available</div>
                 <div class="stat-value" id="availableAreas">0</div>
             </div>
         </div>
 
         <div class="main-grid">
             <div class="filters">
-                <div class="filter-title">Filters</div>
+                <div class="filter-title" id="filtersTitle">Filters</div>
                 
                 <div class="filter-group">
-                    <label class="filter-label">Status</label>
+                    <label class="filter-label" id="labelEstado">Estado</label>
                     <select id="filterEstado">
-                        <option value="all">All</option>
-                        <option value="disponible">Available</option>
-                        <option value="no-disponible">Not Available</option>
+                        <option value="all">Todos</option>
+                        <option value="disponible">Disponible</option>
+                        <option value="no-disponible">No Disponible</option>
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Cluster</label>
-                    <select id="filterCluster">
-                        <option value="all">All</option>
+                    <label class="filter-label" id="labelCluster">Cluster</label>
+                    <select id="filterCluster" multiple>
+                        <option value="all">Todos</option>
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Department</label>
+                    <label class="filter-label" id="labelDepartamento">Departamento</label>
                     <select id="filterDepartamento">
-                        <option value="all">All</option>
+                        <option value="all">Todos</option>
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Mineral Type</label>
+                    <label class="filter-label" id="labelMineral">Tipo de Mineral</label>
                     <select id="filterMineral">
-                        <option value="all">All</option>
+                        <option value="all">Todos</option>
                     </select>
                 </div>
 
-                <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
+                <button class="reset-btn" onclick="resetFilters()" id="resetBtn">Restablecer Filtros</button>
             </div>
 
             <div class="map-container">
-                <div class="map-title">Mining Areas Map</div>
+                <div class="map-title" id="mapTitle">Mapa de Áreas Mineras</div>
                 
                 <div class="map-controls">
                     <button class="map-btn active" id="btnStandard" onclick="changeBaseLayer('standard')">Standard</button>
-                    <button class="map-btn" id="btnTerrain" onclick="changeBaseLayer('terrain')">Terrain</button>
-                    <button class="map-btn" id="btnSatellite" onclick="changeBaseLayer('satellite')">Satellite</button>
-                    <button class="map-btn active" id="btnDepts" onclick="toggleDepartments()">Departments</button>
+                    <button class="map-btn" id="btnTerrain" onclick="changeBaseLayer('terrain')">
+                        <span class="en">Terrain</span><span class="es" style="display:none;">Terreno</span>
+                    </button>
+                    <button class="map-btn" id="btnSatellite" onclick="changeBaseLayer('satellite')">
+                        <span class="en">Satellite</span><span class="es" style="display:none;">Satélite</span>
+                    </button>
+                    <button class="map-btn active" id="btnDepts" onclick="toggleDepartments()">
+                        <span class="en">Departments</span><span class="es" style="display:none;">Departamentos</span>
+                    </button>
                 </div>
                 
                 <div id="map"></div>
                 
                 <div class="legend">
-                    <div class="legend-title">Legend</div>
+                    <div class="legend-title" id="legendTitle">Leyenda</div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #4CAF50;"></div>
-                        <span>Available</span>
+                        <span id="legendAvailable">Disponible</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #FF6B35;"></div>
-                        <span>Not Available</span>
+                        <span id="legendNotAvailable">No Disponible</span>
                     </div>
                     <div style="margin-top: 10px; color: #B0C4DE;">
-                        <span id="areasCount">0</span> areas shown
+                        <span id="areasCount">0</span> <span id="areasShownText">áreas mostradas</span>
                     </div>
                 </div>
             </div>
@@ -341,14 +418,14 @@
 
         <div class="charts">
             <div class="chart-card">
-                <div class="chart-title">Distribution by Mineral Type</div>
+                <div class="chart-title" id="chartMineralTitle">Por Tipo de Mineral</div>
                 <div class="chart-container">
                     <canvas id="chartMineral"></canvas>
                 </div>
             </div>
 
             <div class="chart-card">
-                <div class="chart-title">Distribution by Cluster</div>
+                <div class="chart-title" id="chartClusterTitle">Por Cluster</div>
                 <div class="chart-container">
                     <canvas id="chartCluster"></canvas>
                 </div>
@@ -357,6 +434,56 @@
     </div>
 
     <script>
+        // Translations
+        const translations = {
+            en: {
+                mainTitle: 'JEMSE MINING PORTFOLIO',
+                subtitle: 'Jujuy Province - Argentina | PDAC 2026',
+                labelTotal: 'Total Areas',
+                labelHectares: 'Total Hectares',
+                labelAvailable: 'Available',
+                filtersTitle: 'Filters',
+                labelEstado: 'Status',
+                labelCluster: 'Cluster',
+                labelDepartamento: 'Department',
+                labelMineral: 'Mineral Type',
+                resetBtn: 'Reset Filters',
+                mapTitle: 'Mining Areas Map',
+                legendTitle: 'Legend',
+                legendAvailable: 'Available',
+                legendNotAvailable: 'Not Available',
+                areasShownText: 'areas shown',
+                chartMineralTitle: 'By Mineral Type',
+                chartClusterTitle: 'By Cluster',
+                filterAll: 'All',
+                filterDisponible: 'Available',
+                filterNoDisponible: 'Not Available'
+            },
+            es: {
+                mainTitle: 'CARTERA MINERA JEMSE',
+                subtitle: 'Provincia de Jujuy - Argentina | PDAC 2026',
+                labelTotal: 'Áreas Totales',
+                labelHectares: 'Hectáreas Totales',
+                labelAvailable: 'Disponibles',
+                filtersTitle: 'Filtros',
+                labelEstado: 'Estado',
+                labelCluster: 'Cluster',
+                labelDepartamento: 'Departamento',
+                labelMineral: 'Tipo de Mineral',
+                resetBtn: 'Restablecer Filtros',
+                mapTitle: 'Mapa de Áreas Mineras',
+                legendTitle: 'Leyenda',
+                legendAvailable: 'Disponible',
+                legendNotAvailable: 'No Disponible',
+                areasShownText: 'áreas mostradas',
+                chartMineralTitle: 'Por Tipo de Mineral',
+                chartClusterTitle: 'Por Cluster',
+                filterAll: 'Todos',
+                filterDisponible: 'Disponible',
+                filterNoDisponible: 'No Disponible'
+            }
+        };
+
         // Global variables
         let map;
         let areasData = null;
@@ -366,11 +493,12 @@
         let deptsLayer;
         let currentFilters = {
             estado: 'all',
-            cluster: 'all',
+            cluster: [],
             departamento: 'all',
             mineral: 'all'
         };
         let charts = {};
+        let currentLang = 'es';
 
         // Initialize
         async function init() {
@@ -410,10 +538,8 @@
         function initMap() {
             console.log('🗺️ Initializing map...');
             
-            // Create map
             map = L.map('map').setView([-23.5, -66.0], 8);
             
-            // Base layers
             baseLayers.standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             });
@@ -426,10 +552,8 @@
                 attribution: '© Esri'
             });
             
-            // Add default layer
             baseLayers.standard.addTo(map);
             
-            // Create layer groups
             miningLayer = L.layerGroup().addTo(map);
             deptsLayer = L.layerGroup().addTo(map);
             
@@ -437,15 +561,11 @@
         }
 
         function changeBaseLayer(layer) {
-            // Remove all base layers
             Object.values(baseLayers).forEach(l => map.removeLayer(l));
-            
-            // Add selected layer
             baseLayers[layer].addTo(map);
             
-            // Update buttons
             document.querySelectorAll('.map-btn').forEach(btn => {
-                if (btn.id.includes('btn')) {
+                if (btn.id.includes('btn') && !btn.id.includes('Depts')) {
                     btn.classList.remove('active');
                 }
             });
@@ -492,13 +612,12 @@
                 if (f.properties.tipo_miner) minerales.add(f.properties.tipo_miner);
             });
             
-            // Populate selects
-            populateSelect('filterCluster', Array.from(clusters).sort());
+            populateSelect('filterCluster', Array.from(clusters).sort(), true);
             populateSelect('filterDepartamento', Array.from(departamentos).sort());
             populateSelect('filterMineral', Array.from(minerales).sort());
         }
 
-        function populateSelect(id, options) {
+        function populateSelect(id, options, isMultiple = false) {
             const select = document.getElementById(id);
             options.forEach(opt => {
                 const option = document.createElement('option');
@@ -519,8 +638,10 @@
                     if (currentFilters.estado === 'no-disponible' && isDisponible) return false;
                 }
                 
-                // Cluster filter
-                if (currentFilters.cluster !== 'all' && props.cluster !== currentFilters.cluster) return false;
+                // Cluster filter (multiple selection)
+                if (currentFilters.cluster.length > 0 && !currentFilters.cluster.includes('all')) {
+                    if (!currentFilters.cluster.includes(props.cluster)) return false;
+                }
                 
                 // Departamento filter
                 if (currentFilters.departamento !== 'all' && props.departamento !== currentFilters.departamento) return false;
@@ -535,13 +656,8 @@
         function updateDashboard() {
             const filtered = getFilteredData();
             
-            // Update stats
             updateStats(filtered);
-            
-            // Update map
             updateMap(filtered);
-            
-            // Update charts
             updateCharts(filtered);
         }
 
@@ -580,10 +696,10 @@
                         <div style="font-family: Arial; min-width: 250px;">
                             <h3 style="color: #002855; margin-bottom: 10px;">${props.expediente || 'N/A'}</h3>
                             ${props.cluster ? `<p><b>Cluster:</b> ${props.cluster}</p>` : ''}
-                            <p><b>Department:</b> ${props.departamento || 'N/A'}</p>
-                            <p><b>Mineral:</b> ${props.tipo_miner || 'N/A'}</p>
-                            <p><b>Area:</b> ${props.area ? Math.round(props.area).toLocaleString() : 'N/A'} ha</p>
-                            <p><b>Status:</b> ${props.estado || 'N/A'}</p>
+                            <p><b>${currentLang === 'es' ? 'Departamento' : 'Department'}:</b> ${props.departamento || 'N/A'}</p>
+                            <p><b>${currentLang === 'es' ? 'Mineral' : 'Mineral'}:</b> ${props.tipo_miner || 'N/A'}</p>
+                            <p><b>${currentLang === 'es' ? 'Área' : 'Area'}:</b> ${props.area ? Math.round(props.area).toLocaleString() : 'N/A'} ha</p>
+                            <p><b>${currentLang === 'es' ? 'Estado' : 'Status'}:</b> ${props.estado || 'N/A'}</p>
                         </div>
                     `;
                     layer.bindPopup(popup);
@@ -598,7 +714,6 @@
                 }
             }).addTo(miningLayer);
             
-            // Fit bounds
             if (filtered.length > 0) {
                 const bounds = miningLayer.getBounds();
                 if (bounds.isValid()) {
@@ -608,11 +723,15 @@
         }
 
         function updateCharts(filtered) {
-            // Mineral chart
-            const mineralCounts = {};
+            // Mineral chart - Count + Hectares
+            const mineralData = {};
             filtered.forEach(f => {
                 const mineral = f.properties.tipo_miner || 'Unknown';
-                mineralCounts[mineral] = (mineralCounts[mineral] || 0) + 1;
+                if (!mineralData[mineral]) {
+                    mineralData[mineral] = { count: 0, hectares: 0 };
+                }
+                mineralData[mineral].count++;
+                mineralData[mineral].hectares += (f.properties.area || 0);
             });
             
             if (charts.mineral) charts.mineral.destroy();
@@ -621,74 +740,205 @@
             charts.mineral = new Chart(ctxMineral, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(mineralCounts),
-                    datasets: [{
-                        label: 'Areas',
-                        data: Object.values(mineralCounts),
-                        backgroundColor: 'rgba(0, 168, 232, 0.7)',
-                        borderColor: 'rgba(0, 168, 232, 1)',
-                        borderWidth: 2
-                    }]
+                    labels: Object.keys(mineralData),
+                    datasets: [
+                        {
+                            label: currentLang === 'es' ? 'Cantidad de Áreas' : 'Number of Areas',
+                            data: Object.values(mineralData).map(d => d.count),
+                            backgroundColor: 'rgba(0, 168, 232, 0.7)',
+                            borderColor: 'rgba(0, 168, 232, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
+                            data: Object.values(mineralData).map(d => Math.round(d.hectares)),
+                            backgroundColor: 'rgba(255, 107, 53, 0.7)',
+                            borderColor: 'rgba(255, 107, 53, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: '#B0C4DE' } },
-                        x: { ticks: { color: '#B0C4DE', maxRotation: 45 } }
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: currentLang === 'es' ? 'Cantidad' : 'Count',
+                                color: '#B0C4DE'
+                            },
+                            ticks: { color: '#B0C4DE' },
+                            grid: { color: 'rgba(0, 168, 232, 0.1)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
+                                color: '#B0C4DE'
+                            },
+                            ticks: { color: '#B0C4DE' },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            ticks: { color: '#B0C4DE', maxRotation: 45, minRotation: 45 },
+                            grid: { display: false }
+                        }
                     }
                 }
             });
             
-            // Cluster chart
-            const clusterCounts = {};
+            // Cluster chart - Count + Hectares
+            const clusterData = {};
             filtered.forEach(f => {
-                const cluster = f.properties.cluster || 'No Cluster';
-                clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                const cluster = f.properties.cluster || 'Sin Cluster';
+                if (!clusterData[cluster]) {
+                    clusterData[cluster] = { count: 0, hectares: 0 };
+                }
+                clusterData[cluster].count++;
+                clusterData[cluster].hectares += (f.properties.area || 0);
             });
             
             if (charts.cluster) charts.cluster.destroy();
             
             const ctxCluster = document.getElementById('chartCluster').getContext('2d');
             charts.cluster = new Chart(ctxCluster, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: Object.keys(clusterCounts),
-                    datasets: [{
-                        data: Object.values(clusterCounts),
-                        backgroundColor: [
-                            'rgba(0, 168, 232, 0.8)',
-                            'rgba(79, 195, 247, 0.8)',
-                            'rgba(255, 107, 53, 0.8)',
-                            'rgba(255, 193, 7, 0.8)',
-                            'rgba(76, 175, 80, 0.8)',
-                            'rgba(156, 39, 176, 0.8)'
-                        ]
-                    }]
+                    labels: Object.keys(clusterData),
+                    datasets: [
+                        {
+                            label: currentLang === 'es' ? 'Cantidad de Áreas' : 'Number of Areas',
+                            data: Object.values(clusterData).map(d => d.count),
+                            backgroundColor: 'rgba(79, 195, 247, 0.7)',
+                            borderColor: 'rgba(79, 195, 247, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
+                            data: Object.values(clusterData).map(d => Math.round(d.hectares)),
+                            backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { color: '#B0C4DE' } }
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: currentLang === 'es' ? 'Cantidad' : 'Count',
+                                color: '#B0C4DE'
+                            },
+                            ticks: { color: '#B0C4DE' },
+                            grid: { color: 'rgba(79, 195, 247, 0.1)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
+                                color: '#B0C4DE'
+                            },
+                            ticks: { color: '#B0C4DE' },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            ticks: { color: '#B0C4DE', maxRotation: 45, minRotation: 45 },
+                            grid: { display: false }
+                        }
                     }
                 }
             });
         }
 
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            const t = translations[currentLang];
+            
+            // Update text content
+            document.getElementById('mainTitle').textContent = t.mainTitle;
+            document.getElementById('subtitle').textContent = t.subtitle;
+            document.getElementById('labelTotal').textContent = t.labelTotal;
+            document.getElementById('labelHectares').textContent = t.labelHectares;
+            document.getElementById('labelAvailable').textContent = t.labelAvailable;
+            document.getElementById('filtersTitle').textContent = t.filtersTitle;
+            document.getElementById('labelEstado').textContent = t.labelEstado;
+            document.getElementById('labelCluster').textContent = t.labelCluster;
+            document.getElementById('labelDepartamento').textContent = t.labelDepartamento;
+            document.getElementById('labelMineral').textContent = t.labelMineral;
+            document.getElementById('resetBtn').textContent = t.resetBtn;
+            document.getElementById('mapTitle').textContent = t.mapTitle;
+            document.getElementById('legendTitle').textContent = t.legendTitle;
+            document.getElementById('legendAvailable').textContent = t.legendAvailable;
+            document.getElementById('legendNotAvailable').textContent = t.legendNotAvailable;
+            document.getElementById('areasShownText').textContent = t.areasShownText;
+            document.getElementById('chartMineralTitle').textContent = t.chartMineralTitle;
+            document.getElementById('chartClusterTitle').textContent = t.chartClusterTitle;
+            document.getElementById('langBtn').textContent = currentLang === 'en' ? 'Español' : 'English';
+            
+            // Update filter options
+            const filterEstado = document.getElementById('filterEstado');
+            filterEstado.options[0].text = t.filterAll;
+            filterEstado.options[1].text = t.filterDisponible;
+            filterEstado.options[2].text = t.filterNoDisponible;
+            
+            // Update multi-select options
+            const filterCluster = document.getElementById('filterCluster');
+            filterCluster.options[0].text = t.filterAll;
+            
+            const filterDepartamento = document.getElementById('filterDepartamento');
+            filterDepartamento.options[0].text = t.filterAll;
+            
+            const filterMineral = document.getElementById('filterMineral');
+            filterMineral.options[0].text = t.filterAll;
+            
+            // Update charts
+            updateCharts(getFilteredData());
+        }
+
         function resetFilters() {
             currentFilters = {
                 estado: 'all',
-                cluster: 'all',
+                cluster: [],
                 departamento: 'all',
                 mineral: 'all'
             };
             
             document.getElementById('filterEstado').value = 'all';
-            document.getElementById('filterCluster').value = 'all';
+            
+            // Reset multi-select
+            const clusterSelect = document.getElementById('filterCluster');
+            for (let i = 0; i < clusterSelect.options.length; i++) {
+                clusterSelect.options[i].selected = false;
+            }
+            
             document.getElementById('filterDepartamento').value = 'all';
             document.getElementById('filterMineral').value = 'all';
             
@@ -702,7 +952,8 @@
         });
 
         document.getElementById('filterCluster').addEventListener('change', (e) => {
-            currentFilters.cluster = e.target.value;
+            const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
+            currentFilters.cluster = selected.includes('all') ? [] : selected;
             updateDashboard();
         });
 
