@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -292,6 +292,76 @@
             position: relative;
         }
         
+        .table-section {
+            background: #1A3552;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 168, 232, 0.2);
+            margin-bottom: 25px;
+        }
+        
+        .table-title {
+            color: #00A8E8;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            position: sticky;
+            top: 0;
+            background: #132840;
+            padding: 12px;
+            text-align: left;
+            color: #00A8E8;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            border-bottom: 2px solid rgba(0, 168, 232, 0.3);
+            z-index: 10;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 168, 232, 0.1);
+            font-size: 0.9em;
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(0, 168, 232, 0.1);
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        
+        .status-disponible {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81C784;
+            border: 1px solid #4CAF50;
+        }
+        
+        .status-no-disponible {
+            background: rgba(255, 107, 53, 0.2);
+            color: #FF8C5A;
+            border: 1px solid #FF6B35;
+        }
+        
         .loading {
             text-align: center;
             padding: 50px;
@@ -323,37 +393,37 @@
                 <img src="01_-_Gob_-_Logo_Original_Positivo.png" alt="Gobierno de Jujuy" class="logo-img logo-gov">
             </div>
             <div class="header-center">
-                <h1 id="mainTitle">JEMSE MINING PORTFOLIO</h1>
-                <div class="subtitle" id="subtitle">Jujuy Province - Argentina | PDAC 2026</div>
+                <h1 id="mainTitle">CARTERA MINERA JEMSE</h1>
+                <div class="subtitle" id="subtitle">Provincia de Jujuy - Argentina | PDAC 2026</div>
             </div>
-            <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">Español</button>
+            <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">English</button>
         </header>
 
         <div class="stats" id="stats">
             <div class="stat-card">
-                <div class="stat-label" id="labelTotal">Total Areas</div>
+                <div class="stat-label" id="labelTotal">Áreas Totales</div>
                 <div class="stat-value" id="totalAreas">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label" id="labelHectares">Total Hectares</div>
+                <div class="stat-label" id="labelHectares">Hectáreas Totales</div>
                 <div class="stat-value" id="totalHectares">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label" id="labelAvailable">Available</div>
+                <div class="stat-label" id="labelAvailable">Disponibles</div>
                 <div class="stat-value" id="availableAreas">0</div>
             </div>
         </div>
 
         <div class="main-grid">
             <div class="filters">
-                <div class="filter-title" id="filtersTitle">Filters</div>
+                <div class="filter-title" id="filtersTitle">Filtros</div>
                 
                 <div class="filter-group">
                     <label class="filter-label" id="labelEstado">Estado</label>
                     <select id="filterEstado">
                         <option value="all">Todos</option>
-                        <option value="disponible">Disponible</option>
-                        <option value="no-disponible">No Disponible</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="No disponible">No Disponible</option>
                     </select>
                 </div>
 
@@ -386,15 +456,9 @@
                 
                 <div class="map-controls">
                     <button class="map-btn active" id="btnStandard" onclick="changeBaseLayer('standard')">Standard</button>
-                    <button class="map-btn" id="btnTerrain" onclick="changeBaseLayer('terrain')">
-                        <span class="en">Terrain</span><span class="es" style="display:none;">Terreno</span>
-                    </button>
-                    <button class="map-btn" id="btnSatellite" onclick="changeBaseLayer('satellite')">
-                        <span class="en">Satellite</span><span class="es" style="display:none;">Satélite</span>
-                    </button>
-                    <button class="map-btn active" id="btnDepts" onclick="toggleDepartments()">
-                        <span class="en">Departments</span><span class="es" style="display:none;">Departamentos</span>
-                    </button>
+                    <button class="map-btn" id="btnTerrain" onclick="changeBaseLayer('terrain')" id="btnTerrainLabel">Terreno</button>
+                    <button class="map-btn" id="btnSatellite" onclick="changeBaseLayer('satellite')" id="btnSatelliteLabel">Satélite</button>
+                    <button class="map-btn active" id="btnDepts" onclick="toggleDepartments()" id="btnDeptsLabel">Departamentos</button>
                 </div>
                 
                 <div id="map"></div>
@@ -431,6 +495,27 @@
                 </div>
             </div>
         </div>
+
+        <div class="table-section">
+            <div class="table-title" id="tableTitle">Áreas Seleccionadas - Tabla de Atributos</div>
+            <div class="table-wrapper">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th id="thExpediente">Expediente</th>
+                            <th id="thCluster">Cluster</th>
+                            <th id="thDepartamento">Departamento</th>
+                            <th id="thMineral">Tipo de Mineral</th>
+                            <th id="thArea">Área (ha)</th>
+                            <th id="thEstado">Estado</th>
+                            <th id="thTipo">Tipo Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -449,12 +534,23 @@
                 labelMineral: 'Mineral Type',
                 resetBtn: 'Reset Filters',
                 mapTitle: 'Mining Areas Map',
+                btnTerrainLabel: 'Terrain',
+                btnSatelliteLabel: 'Satellite',
+                btnDeptsLabel: 'Departments',
                 legendTitle: 'Legend',
                 legendAvailable: 'Available',
                 legendNotAvailable: 'Not Available',
                 areasShownText: 'areas shown',
                 chartMineralTitle: 'By Mineral Type',
                 chartClusterTitle: 'By Cluster',
+                tableTitle: 'Selected Areas - Attribute Table',
+                thExpediente: 'File Number',
+                thCluster: 'Cluster',
+                thDepartamento: 'Department',
+                thMineral: 'Mineral Type',
+                thArea: 'Area (ha)',
+                thEstado: 'Status',
+                thTipo: 'Registry Type',
                 filterAll: 'All',
                 filterDisponible: 'Available',
                 filterNoDisponible: 'Not Available'
@@ -472,12 +568,23 @@
                 labelMineral: 'Tipo de Mineral',
                 resetBtn: 'Restablecer Filtros',
                 mapTitle: 'Mapa de Áreas Mineras',
+                btnTerrainLabel: 'Terreno',
+                btnSatelliteLabel: 'Satélite',
+                btnDeptsLabel: 'Departamentos',
                 legendTitle: 'Leyenda',
                 legendAvailable: 'Disponible',
                 legendNotAvailable: 'No Disponible',
                 areasShownText: 'áreas mostradas',
                 chartMineralTitle: 'Por Tipo de Mineral',
                 chartClusterTitle: 'Por Cluster',
+                tableTitle: 'Áreas Seleccionadas - Tabla de Atributos',
+                thExpediente: 'Expediente',
+                thCluster: 'Cluster',
+                thDepartamento: 'Departamento',
+                thMineral: 'Tipo de Mineral',
+                thArea: 'Área (ha)',
+                thEstado: 'Estado',
+                thTipo: 'Tipo de Registro',
                 filterAll: 'Todos',
                 filterDisponible: 'Disponible',
                 filterNoDisponible: 'No Disponible'
@@ -505,8 +612,6 @@
             console.log('🚀 Initializing dashboard...');
             
             try {
-                // Load GeoJSON files
-                console.log('📥 Loading GeoJSON files...');
                 const [areasResponse, deptosResponse] = await Promise.all([
                     fetch('areas_enriched.geojson'),
                     fetch('departamentos.geojson')
@@ -518,13 +623,15 @@
                 console.log(`✅ Loaded ${areasData.features.length} mining areas`);
                 console.log(`✅ Loaded ${deptosData.features.length} departments`);
                 
-                // Initialize map
+                // Debug: Ver estados
+                const estados = new Set();
+                areasData.features.forEach(f => {
+                    if (f.properties.estado) estados.add(f.properties.estado);
+                });
+                console.log('Estados encontrados:', Array.from(estados));
+                
                 initMap();
-                
-                // Populate filters
                 populateFilters();
-                
-                // Initial render
                 updateDashboard();
                 
                 console.log('✅ Dashboard initialized successfully!');
@@ -556,6 +663,8 @@
             
             miningLayer = L.layerGroup().addTo(map);
             deptsLayer = L.layerGroup().addTo(map);
+            
+            updateDepartments();
             
             console.log('✅ Map initialized');
         }
@@ -631,11 +740,9 @@
             return areasData.features.filter(f => {
                 const props = f.properties;
                 
-                // Estado filter
+                // Estado filter - CORREGIDO
                 if (currentFilters.estado !== 'all') {
-                    const isDisponible = props.estado?.toLowerCase().includes('disponible');
-                    if (currentFilters.estado === 'disponible' && !isDisponible) return false;
-                    if (currentFilters.estado === 'no-disponible' && isDisponible) return false;
+                    if (props.estado !== currentFilters.estado) return false;
                 }
                 
                 // Cluster filter (multiple selection)
@@ -655,14 +762,16 @@
 
         function updateDashboard() {
             const filtered = getFilteredData();
+            console.log(`Filtered: ${filtered.length} areas`);
             
             updateStats(filtered);
             updateMap(filtered);
             updateCharts(filtered);
+            updateTable(filtered);
         }
 
         function updateStats(filtered) {
-            const available = filtered.filter(f => f.properties.estado?.toLowerCase().includes('disponible')).length;
+            const available = filtered.filter(f => f.properties.estado === 'Disponible').length;
             const totalHa = filtered.reduce((sum, f) => sum + (f.properties.area || 0), 0);
             
             document.getElementById('totalAreas').textContent = filtered.length;
@@ -681,7 +790,7 @@
             
             L.geoJSON(geoJson, {
                 style: (feature) => {
-                    const isDisponible = feature.properties.estado?.toLowerCase().includes('disponible');
+                    const isDisponible = feature.properties.estado === 'Disponible';
                     return {
                         fillColor: isDisponible ? '#4CAF50' : '#FF6B35',
                         fillOpacity: 0.5,
@@ -723,16 +832,20 @@
         }
 
         function updateCharts(filtered) {
-            // Mineral chart - Count + Hectares
+            console.log('Updating charts with', filtered.length, 'areas');
+            
+            // Mineral chart
             const mineralData = {};
             filtered.forEach(f => {
-                const mineral = f.properties.tipo_miner || 'Unknown';
+                const mineral = f.properties.tipo_miner || 'Desconocido';
                 if (!mineralData[mineral]) {
                     mineralData[mineral] = { count: 0, hectares: 0 };
                 }
                 mineralData[mineral].count++;
                 mineralData[mineral].hectares += (f.properties.area || 0);
             });
+            
+            console.log('Mineral data:', mineralData);
             
             if (charts.mineral) charts.mineral.destroy();
             
@@ -800,7 +913,7 @@
                 }
             });
             
-            // Cluster chart - Count + Hectares
+            // Cluster chart
             const clusterData = {};
             filtered.forEach(f => {
                 const cluster = f.properties.cluster || 'Sin Cluster';
@@ -810,6 +923,8 @@
                 clusterData[cluster].count++;
                 clusterData[cluster].hectares += (f.properties.area || 0);
             });
+            
+            console.log('Cluster data:', clusterData);
             
             if (charts.cluster) charts.cluster.destroy();
             
@@ -878,11 +993,35 @@
             });
         }
 
+        function updateTable(filtered) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            filtered.forEach(f => {
+                const props = f.properties;
+                const row = tbody.insertRow();
+                
+                row.insertCell(0).textContent = props.expediente || '-';
+                row.insertCell(1).textContent = props.cluster || '-';
+                row.insertCell(2).textContent = props.departamento || '-';
+                row.insertCell(3).textContent = props.tipo_miner || '-';
+                row.insertCell(4).textContent = props.area ? Math.round(props.area).toLocaleString() : '-';
+                
+                const estadoCell = row.insertCell(5);
+                const badge = document.createElement('span');
+                badge.className = props.estado === 'Disponible' ? 'status-badge status-disponible' : 'status-badge status-no-disponible';
+                badge.textContent = props.estado || '-';
+                estadoCell.appendChild(badge);
+                
+                row.insertCell(6).textContent = props.rg_tipo || '-';
+            });
+        }
+
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'es' : 'en';
             const t = translations[currentLang];
             
-            // Update text content
+            // Update all text
             document.getElementById('mainTitle').textContent = t.mainTitle;
             document.getElementById('subtitle').textContent = t.subtitle;
             document.getElementById('labelTotal').textContent = t.labelTotal;
@@ -895,12 +1034,23 @@
             document.getElementById('labelMineral').textContent = t.labelMineral;
             document.getElementById('resetBtn').textContent = t.resetBtn;
             document.getElementById('mapTitle').textContent = t.mapTitle;
+            document.getElementById('btnTerrainLabel').textContent = t.btnTerrainLabel;
+            document.getElementById('btnSatelliteLabel').textContent = t.btnSatelliteLabel;
+            document.getElementById('btnDeptsLabel').textContent = t.btnDeptsLabel;
             document.getElementById('legendTitle').textContent = t.legendTitle;
             document.getElementById('legendAvailable').textContent = t.legendAvailable;
             document.getElementById('legendNotAvailable').textContent = t.legendNotAvailable;
             document.getElementById('areasShownText').textContent = t.areasShownText;
             document.getElementById('chartMineralTitle').textContent = t.chartMineralTitle;
             document.getElementById('chartClusterTitle').textContent = t.chartClusterTitle;
+            document.getElementById('tableTitle').textContent = t.tableTitle;
+            document.getElementById('thExpediente').textContent = t.thExpediente;
+            document.getElementById('thCluster').textContent = t.thCluster;
+            document.getElementById('thDepartamento').textContent = t.thDepartamento;
+            document.getElementById('thMineral').textContent = t.thMineral;
+            document.getElementById('thArea').textContent = t.thArea;
+            document.getElementById('thEstado').textContent = t.thEstado;
+            document.getElementById('thTipo').textContent = t.thTipo;
             document.getElementById('langBtn').textContent = currentLang === 'en' ? 'Español' : 'English';
             
             // Update filter options
@@ -909,7 +1059,6 @@
             filterEstado.options[1].text = t.filterDisponible;
             filterEstado.options[2].text = t.filterNoDisponible;
             
-            // Update multi-select options
             const filterCluster = document.getElementById('filterCluster');
             filterCluster.options[0].text = t.filterAll;
             
@@ -933,7 +1082,6 @@
             
             document.getElementById('filterEstado').value = 'all';
             
-            // Reset multi-select
             const clusterSelect = document.getElementById('filterCluster');
             for (let i = 0; i < clusterSelect.options.length; i++) {
                 clusterSelect.options[i].selected = false;
@@ -948,6 +1096,7 @@
         // Event listeners
         document.getElementById('filterEstado').addEventListener('change', (e) => {
             currentFilters.estado = e.target.value;
+            console.log('Estado filter changed to:', currentFilters.estado);
             updateDashboard();
         });
 
@@ -967,7 +1116,7 @@
             updateDashboard();
         });
 
-        // Start when DOM is ready
+        // Start
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
