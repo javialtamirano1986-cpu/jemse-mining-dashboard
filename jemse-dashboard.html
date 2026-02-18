@@ -341,6 +341,18 @@
             background: rgba(0, 168, 232, 0.1);
         }
         
+        .expediente-link {
+            color: #4FC3F7;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .expediente-link:hover {
+            color: #00A8E8;
+            text-decoration: underline;
+        }
+        
         .status-badge {
             padding: 5px 12px;
             border-radius: 20px;
@@ -399,7 +411,7 @@
             <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">English</button>
         </header>
 
-        <div class="stats" id="stats">
+        <div class="stats">
             <div class="stat-card">
                 <div class="stat-label" id="labelTotal">Áreas Totales</div>
                 <div class="stat-value" id="totalAreas">0</div>
@@ -456,9 +468,9 @@
                 
                 <div class="map-controls">
                     <button class="map-btn active" id="btnStandard" onclick="changeBaseLayer('standard')">Standard</button>
-                    <button class="map-btn" id="btnTerrain" onclick="changeBaseLayer('terrain')" id="btnTerrainLabel">Terreno</button>
-                    <button class="map-btn" id="btnSatellite" onclick="changeBaseLayer('satellite')" id="btnSatelliteLabel">Satélite</button>
-                    <button class="map-btn active" id="btnDepts" onclick="toggleDepartments()" id="btnDeptsLabel">Departamentos</button>
+                    <button class="map-btn" id="btnTerrain" onclick="changeBaseLayer('terrain')"><span id="btnTerrainLabel">Terreno</span></button>
+                    <button class="map-btn" id="btnSatellite" onclick="changeBaseLayer('satellite')"><span id="btnSatelliteLabel">Satélite</span></button>
+                    <button class="map-btn active" id="btnDepts" onclick="toggleDepartments()"><span id="btnDeptsLabel">Departamentos</span></button>
                 </div>
                 
                 <div id="map"></div>
@@ -499,7 +511,7 @@
         <div class="table-section">
             <div class="table-title" id="tableTitle">Áreas Seleccionadas - Tabla de Atributos</div>
             <div class="table-wrapper">
-                <table class="data-table" id="dataTable">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th id="thExpediente">Expediente</th>
@@ -519,7 +531,25 @@
     </div>
 
     <script>
-        // Translations
+        // Translations - MINERALES
+        const mineralTranslations = {
+            'Oro aluvional': 'Alluvial Gold',
+            'Borato y sales de boro': 'Borate and Boron Salts',
+            'Polimetálico': 'Polymetallic',
+            'Litio': 'Lithium',
+            'Cobre': 'Copper',
+            'Plata': 'Silver',
+            'Oro': 'Gold',
+            'Zinc': 'Zinc',
+            'Plomo': 'Lead'
+        };
+
+        const statusTranslations = {
+            'Disponible': 'Available',
+            'No disponible': 'Not Available'
+        };
+
+        // Translations - UI
         const translations = {
             en: {
                 mainTitle: 'JEMSE MINING PORTFOLIO',
@@ -553,7 +583,9 @@
                 thTipo: 'Registry Type',
                 filterAll: 'All',
                 filterDisponible: 'Available',
-                filterNoDisponible: 'Not Available'
+                filterNoDisponible: 'Not Available',
+                countLabel: 'Count',
+                hectaresLabel: 'Hectares'
             },
             es: {
                 mainTitle: 'CARTERA MINERA JEMSE',
@@ -587,7 +619,9 @@
                 thTipo: 'Tipo de Registro',
                 filterAll: 'Todos',
                 filterDisponible: 'Disponible',
-                filterNoDisponible: 'No Disponible'
+                filterNoDisponible: 'No Disponible',
+                countLabel: 'Cantidad',
+                hectaresLabel: 'Hectáreas'
             }
         };
 
@@ -598,6 +632,7 @@
         let baseLayers = {};
         let miningLayer;
         let deptsLayer;
+        let markersMap = {}; // Para guardar referencia a cada área
         let currentFilters = {
             estado: 'all',
             cluster: [],
@@ -606,6 +641,20 @@
         };
         let charts = {};
         let currentLang = 'es';
+
+        function translateMineral(mineral) {
+            if (currentLang === 'en' && mineralTranslations[mineral]) {
+                return mineralTranslations[mineral];
+            }
+            return mineral;
+        }
+
+        function translateStatus(status) {
+            if (currentLang === 'en' && statusTranslations[status]) {
+                return statusTranslations[status];
+            }
+            return status;
+        }
 
         // Initialize
         async function init() {
@@ -623,13 +672,6 @@
                 console.log(`✅ Loaded ${areasData.features.length} mining areas`);
                 console.log(`✅ Loaded ${deptosData.features.length} departments`);
                 
-                // Debug: Ver estados
-                const estados = new Set();
-                areasData.features.forEach(f => {
-                    if (f.properties.estado) estados.add(f.properties.estado);
-                });
-                console.log('Estados encontrados:', Array.from(estados));
-                
                 initMap();
                 populateFilters();
                 updateDashboard();
@@ -638,13 +680,11 @@
                 
             } catch (error) {
                 console.error('❌ Error loading data:', error);
-                alert('Error loading data. Please check console for details.');
+                alert('Error loading data: ' + error.message);
             }
         }
 
         function initMap() {
-            console.log('🗺️ Initializing map...');
-            
             map = L.map('map').setView([-23.5, -66.0], 8);
             
             baseLayers.standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -665,8 +705,6 @@
             deptsLayer = L.layerGroup().addTo(map);
             
             updateDepartments();
-            
-            console.log('✅ Map initialized');
         }
 
         function changeBaseLayer(layer) {
@@ -721,12 +759,12 @@
                 if (f.properties.tipo_miner) minerales.add(f.properties.tipo_miner);
             });
             
-            populateSelect('filterCluster', Array.from(clusters).sort(), true);
+            populateSelect('filterCluster', Array.from(clusters).sort());
             populateSelect('filterDepartamento', Array.from(departamentos).sort());
             populateSelect('filterMineral', Array.from(minerales).sort());
         }
 
-        function populateSelect(id, options, isMultiple = false) {
+        function populateSelect(id, options) {
             const select = document.getElementById(id);
             options.forEach(opt => {
                 const option = document.createElement('option');
@@ -740,20 +778,11 @@
             return areasData.features.filter(f => {
                 const props = f.properties;
                 
-                // Estado filter - CORREGIDO
-                if (currentFilters.estado !== 'all') {
-                    if (props.estado !== currentFilters.estado) return false;
-                }
-                
-                // Cluster filter (multiple selection)
+                if (currentFilters.estado !== 'all' && props.estado !== currentFilters.estado) return false;
                 if (currentFilters.cluster.length > 0 && !currentFilters.cluster.includes('all')) {
                     if (!currentFilters.cluster.includes(props.cluster)) return false;
                 }
-                
-                // Departamento filter
                 if (currentFilters.departamento !== 'all' && props.departamento !== currentFilters.departamento) return false;
-                
-                // Mineral filter
                 if (currentFilters.mineral !== 'all' && props.tipo_miner !== currentFilters.mineral) return false;
                 
                 return true;
@@ -782,6 +811,7 @@
 
         function updateMap(filtered) {
             miningLayer.clearLayers();
+            markersMap = {};
             
             const geoJson = {
                 type: 'FeatureCollection',
@@ -801,14 +831,19 @@
                 },
                 onEachFeature: (feature, layer) => {
                     const props = feature.properties;
+                    const expediente = props.expediente;
+                    
+                    // Guardar referencia
+                    markersMap[expediente] = layer;
+                    
                     const popup = `
                         <div style="font-family: Arial; min-width: 250px;">
-                            <h3 style="color: #002855; margin-bottom: 10px;">${props.expediente || 'N/A'}</h3>
+                            <h3 style="color: #002855; margin-bottom: 10px;">${expediente || 'N/A'}</h3>
                             ${props.cluster ? `<p><b>Cluster:</b> ${props.cluster}</p>` : ''}
-                            <p><b>${currentLang === 'es' ? 'Departamento' : 'Department'}:</b> ${props.departamento || 'N/A'}</p>
-                            <p><b>${currentLang === 'es' ? 'Mineral' : 'Mineral'}:</b> ${props.tipo_miner || 'N/A'}</p>
-                            <p><b>${currentLang === 'es' ? 'Área' : 'Area'}:</b> ${props.area ? Math.round(props.area).toLocaleString() : 'N/A'} ha</p>
-                            <p><b>${currentLang === 'es' ? 'Estado' : 'Status'}:</b> ${props.estado || 'N/A'}</p>
+                            <p><b>${translations[currentLang].thDepartamento}:</b> ${props.departamento || 'N/A'}</p>
+                            <p><b>${translations[currentLang].thMineral}:</b> ${translateMineral(props.tipo_miner) || 'N/A'}</p>
+                            <p><b>${translations[currentLang].thArea}:</b> ${props.area ? Math.round(props.area).toLocaleString() : 'N/A'} ha</p>
+                            <p><b>${translations[currentLang].thEstado}:</b> ${translateStatus(props.estado) || 'N/A'}</p>
                         </div>
                     `;
                     layer.bindPopup(popup);
@@ -831,87 +866,105 @@
             }
         }
 
+        function zoomToArea(expediente) {
+            const layer = markersMap[expediente];
+            if (layer) {
+                const bounds = layer.getBounds();
+                map.fitBounds(bounds, { padding: [100, 100], maxZoom: 12 });
+                layer.openPopup();
+                
+                // Scroll al mapa
+                document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
         function updateCharts(filtered) {
-            console.log('Updating charts with', filtered.length, 'areas');
+            const t = translations[currentLang];
             
             // Mineral chart
             const mineralData = {};
             filtered.forEach(f => {
                 const mineral = f.properties.tipo_miner || 'Desconocido';
-                if (!mineralData[mineral]) {
-                    mineralData[mineral] = { count: 0, hectares: 0 };
+                const translatedMineral = translateMineral(mineral);
+                if (!mineralData[translatedMineral]) {
+                    mineralData[translatedMineral] = { count: 0, hectares: 0 };
                 }
-                mineralData[mineral].count++;
-                mineralData[mineral].hectares += (f.properties.area || 0);
+                mineralData[translatedMineral].count++;
+                mineralData[translatedMineral].hectares += (f.properties.area || 0);
             });
-            
-            console.log('Mineral data:', mineralData);
             
             if (charts.mineral) charts.mineral.destroy();
             
-            const ctxMineral = document.getElementById('chartMineral').getContext('2d');
-            charts.mineral = new Chart(ctxMineral, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(mineralData),
-                    datasets: [
-                        {
-                            label: currentLang === 'es' ? 'Cantidad de Áreas' : 'Number of Areas',
-                            data: Object.values(mineralData).map(d => d.count),
-                            backgroundColor: 'rgba(0, 168, 232, 0.7)',
-                            borderColor: 'rgba(0, 168, 232, 1)',
-                            borderWidth: 2,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
-                            data: Object.values(mineralData).map(d => Math.round(d.hectares)),
-                            backgroundColor: 'rgba(255, 107, 53, 0.7)',
-                            borderColor: 'rgba(255, 107, 53, 1)',
-                            borderWidth: 2,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
+            const ctxMineral = document.getElementById('chartMineral');
+            if (ctxMineral && Object.keys(mineralData).length > 0) {
+                charts.mineral = new Chart(ctxMineral, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(mineralData),
+                        datasets: [
+                            {
+                                label: t.countLabel,
+                                data: Object.values(mineralData).map(d => d.count),
+                                backgroundColor: 'rgba(0, 168, 232, 0.7)',
+                                borderColor: 'rgba(0, 168, 232, 1)',
+                                borderWidth: 2,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: t.hectaresLabel,
+                                data: Object.values(mineralData).map(d => Math.round(d.hectares)),
+                                backgroundColor: 'rgba(255, 107, 53, 0.7)',
+                                borderColor: 'rgba(255, 107, 53, 1)',
+                                borderWidth: 2,
+                                yAxisID: 'y1'
+                            }
+                        ]
                     },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: currentLang === 'es' ? 'Cantidad' : 'Count',
-                                color: '#B0C4DE'
-                            },
-                            ticks: { color: '#B0C4DE' },
-                            grid: { color: 'rgba(0, 168, 232, 0.1)' }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
                         },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
-                                color: '#B0C4DE'
-                            },
-                            ticks: { color: '#B0C4DE' },
-                            grid: { drawOnChartArea: false }
+                        plugins: {
+                            legend: {
+                                labels: { color: '#B0C4DE' }
+                            }
                         },
-                        x: {
-                            ticks: { color: '#B0C4DE', maxRotation: 45, minRotation: 45 },
-                            grid: { display: false }
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: t.countLabel,
+                                    color: '#B0C4DE'
+                                },
+                                ticks: { color: '#B0C4DE' },
+                                grid: { color: 'rgba(0, 168, 232, 0.1)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: t.hectaresLabel,
+                                    color: '#B0C4DE'
+                                },
+                                ticks: { color: '#B0C4DE' },
+                                grid: { drawOnChartArea: false }
+                            },
+                            x: {
+                                ticks: { color: '#B0C4DE', maxRotation: 45, minRotation: 45 },
+                                grid: { display: false }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
             
             // Cluster chart
             const clusterData = {};
@@ -924,73 +977,78 @@
                 clusterData[cluster].hectares += (f.properties.area || 0);
             });
             
-            console.log('Cluster data:', clusterData);
-            
             if (charts.cluster) charts.cluster.destroy();
             
-            const ctxCluster = document.getElementById('chartCluster').getContext('2d');
-            charts.cluster = new Chart(ctxCluster, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(clusterData),
-                    datasets: [
-                        {
-                            label: currentLang === 'es' ? 'Cantidad de Áreas' : 'Number of Areas',
-                            data: Object.values(clusterData).map(d => d.count),
-                            backgroundColor: 'rgba(79, 195, 247, 0.7)',
-                            borderColor: 'rgba(79, 195, 247, 1)',
-                            borderWidth: 2,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
-                            data: Object.values(clusterData).map(d => Math.round(d.hectares)),
-                            backgroundColor: 'rgba(255, 193, 7, 0.7)',
-                            borderColor: 'rgba(255, 193, 7, 1)',
-                            borderWidth: 2,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
+            const ctxCluster = document.getElementById('chartCluster');
+            if (ctxCluster && Object.keys(clusterData).length > 0) {
+                charts.cluster = new Chart(ctxCluster, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(clusterData),
+                        datasets: [
+                            {
+                                label: t.countLabel,
+                                data: Object.values(clusterData).map(d => d.count),
+                                backgroundColor: 'rgba(79, 195, 247, 0.7)',
+                                borderColor: 'rgba(79, 195, 247, 1)',
+                                borderWidth: 2,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: t.hectaresLabel,
+                                data: Object.values(clusterData).map(d => Math.round(d.hectares)),
+                                backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                                borderColor: 'rgba(255, 193, 7, 1)',
+                                borderWidth: 2,
+                                yAxisID: 'y1'
+                            }
+                        ]
                     },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: currentLang === 'es' ? 'Cantidad' : 'Count',
-                                color: '#B0C4DE'
-                            },
-                            ticks: { color: '#B0C4DE' },
-                            grid: { color: 'rgba(79, 195, 247, 0.1)' }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
                         },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: currentLang === 'es' ? 'Hectáreas' : 'Hectares',
-                                color: '#B0C4DE'
-                            },
-                            ticks: { color: '#B0C4DE' },
-                            grid: { drawOnChartArea: false }
+                        plugins: {
+                            legend: {
+                                labels: { color: '#B0C4DE' }
+                            }
                         },
-                        x: {
-                            ticks: { color: '#B0C4DE', maxRotation: 45, minRotation: 45 },
-                            grid: { display: false }
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: t.countLabel,
+                                    color: '#B0C4DE'
+                                },
+                                ticks: { color: '#B0C4DE' },
+                                grid: { color: 'rgba(79, 195, 247, 0.1)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: t.hectaresLabel,
+                                    color: '#B0C4DE'
+                                },
+                                ticks: { color: '#B0C4DE' },
+                                grid: { drawOnChartArea: false }
+                            },
+                            x: {
+                                ticks: { color: '#B0C4DE', maxRotation: 45, minRotation: 45 },
+                                grid: { display: false }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
 
         function updateTable(filtered) {
@@ -1001,16 +1059,27 @@
                 const props = f.properties;
                 const row = tbody.insertRow();
                 
-                row.insertCell(0).textContent = props.expediente || '-';
+                // Expediente con link
+                const expedienteCell = row.insertCell(0);
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'expediente-link';
+                link.textContent = props.expediente || '-';
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    zoomToArea(props.expediente);
+                };
+                expedienteCell.appendChild(link);
+                
                 row.insertCell(1).textContent = props.cluster || '-';
                 row.insertCell(2).textContent = props.departamento || '-';
-                row.insertCell(3).textContent = props.tipo_miner || '-';
+                row.insertCell(3).textContent = translateMineral(props.tipo_miner) || '-';
                 row.insertCell(4).textContent = props.area ? Math.round(props.area).toLocaleString() : '-';
                 
                 const estadoCell = row.insertCell(5);
                 const badge = document.createElement('span');
                 badge.className = props.estado === 'Disponible' ? 'status-badge status-disponible' : 'status-badge status-no-disponible';
-                badge.textContent = props.estado || '-';
+                badge.textContent = translateStatus(props.estado) || '-';
                 estadoCell.appendChild(badge);
                 
                 row.insertCell(6).textContent = props.rg_tipo || '-';
@@ -1020,6 +1089,9 @@
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'es' : 'en';
             const t = translations[currentLang];
+            
+            // Update button text
+            document.getElementById('langBtn').textContent = currentLang === 'en' ? 'Español' : 'English';
             
             // Update all text
             document.getElementById('mainTitle').textContent = t.mainTitle;
@@ -1051,7 +1123,6 @@
             document.getElementById('thArea').textContent = t.thArea;
             document.getElementById('thEstado').textContent = t.thEstado;
             document.getElementById('thTipo').textContent = t.thTipo;
-            document.getElementById('langBtn').textContent = currentLang === 'en' ? 'Español' : 'English';
             
             // Update filter options
             const filterEstado = document.getElementById('filterEstado');
@@ -1068,8 +1139,8 @@
             const filterMineral = document.getElementById('filterMineral');
             filterMineral.options[0].text = t.filterAll;
             
-            // Update charts
-            updateCharts(getFilteredData());
+            // Update dashboard
+            updateDashboard();
         }
 
         function resetFilters() {
@@ -1096,7 +1167,6 @@
         // Event listeners
         document.getElementById('filterEstado').addEventListener('change', (e) => {
             currentFilters.estado = e.target.value;
-            console.log('Estado filter changed to:', currentFilters.estado);
             updateDashboard();
         });
 
