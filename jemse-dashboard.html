@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     
     <style>
         * {
@@ -374,13 +374,6 @@
             border: 1px solid #FF6B35;
         }
         
-        .loading {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.5em;
-            color: #00A8E8;
-        }
-        
         @media (max-width: 1024px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -531,7 +524,6 @@
     </div>
 
     <script>
-        // Translations - MINERALES
         const mineralTranslations = {
             'Oro aluvional': 'Alluvial Gold',
             'Borato y sales de boro': 'Borate and Boron Salts',
@@ -541,7 +533,13 @@
             'Plata': 'Silver',
             'Oro': 'Gold',
             'Zinc': 'Zinc',
-            'Plomo': 'Lead'
+            'Plomo': 'Lead',
+            'Diseminado de oro': 'Disseminated Gold',
+            'Diseminado de oro y cobre': 'Disseminated Gold and Copper',
+            'Disem. Polimetalico de plata y oro': 'Disseminated Polymetallic Silver and Gold',
+            'REE': 'REE',
+            'Carbonatos de litio': 'Lithium Carbonates',
+            'Polimetalico': 'Polymetallic'
         };
 
         const statusTranslations = {
@@ -549,7 +547,6 @@
             'No disponible': 'Not Available'
         };
 
-        // Translations - UI
         const translations = {
             en: {
                 mainTitle: 'JEMSE MINING PORTFOLIO',
@@ -625,14 +622,9 @@
             }
         };
 
-        // Global variables
-        let map;
-        let areasData = null;
-        let deptosData = null;
-        let baseLayers = {};
-        let miningLayer;
-        let deptsLayer;
-        let markersMap = {}; // Para guardar referencia a cada área
+        let map, areasData, deptosData, baseLayers = {}, miningLayer, deptsLayer;
+        let markersMap = {};
+        let geoJsonLayer = null; // NUEVO: guardar referencia al layer GeoJSON
         let currentFilters = {
             estado: 'all',
             cluster: [],
@@ -643,22 +635,23 @@
         let currentLang = 'es';
 
         function translateMineral(mineral) {
-            if (currentLang === 'en' && mineralTranslations[mineral]) {
-                return mineralTranslations[mineral];
+            if (!mineral) return 'N/A';
+            if (currentLang === 'en') {
+                return mineralTranslations[mineral] || mineral;
             }
             return mineral;
         }
 
         function translateStatus(status) {
-            if (currentLang === 'en' && statusTranslations[status]) {
-                return statusTranslations[status];
+            if (!status) return 'N/A';
+            if (currentLang === 'en') {
+                return statusTranslations[status] || status;
             }
             return status;
         }
 
-        // Initialize
         async function init() {
-            console.log('🚀 Initializing dashboard...');
+            console.log('Initializing dashboard...');
             
             try {
                 const [areasResponse, deptosResponse] = await Promise.all([
@@ -669,18 +662,18 @@
                 areasData = await areasResponse.json();
                 deptosData = await deptosResponse.json();
                 
-                console.log(`✅ Loaded ${areasData.features.length} mining areas`);
-                console.log(`✅ Loaded ${deptosData.features.length} departments`);
+                console.log('Loaded', areasData.features.length, 'mining areas');
+                console.log('Loaded', deptosData.features.length, 'departments');
                 
                 initMap();
                 populateFilters();
                 updateDashboard();
                 
-                console.log('✅ Dashboard initialized successfully!');
+                console.log('Dashboard initialized successfully!');
                 
             } catch (error) {
-                console.error('❌ Error loading data:', error);
-                alert('Error loading data: ' + error.message);
+                console.error('Error loading data:', error);
+                alert('Error: ' + error.message);
             }
         }
 
@@ -690,27 +683,22 @@
             baseLayers.standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             });
-            
             baseLayers.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenTopoMap'
             });
-            
             baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '© Esri'
             });
             
             baseLayers.standard.addTo(map);
-            
             miningLayer = L.layerGroup().addTo(map);
             deptsLayer = L.layerGroup().addTo(map);
-            
             updateDepartments();
         }
 
         function changeBaseLayer(layer) {
             Object.values(baseLayers).forEach(l => map.removeLayer(l));
             baseLayers[layer].addTo(map);
-            
             document.querySelectorAll('.map-btn').forEach(btn => {
                 if (btn.id.includes('btn') && !btn.id.includes('Depts')) {
                     btn.classList.remove('active');
@@ -732,14 +720,8 @@
 
         function updateDepartments() {
             deptsLayer.clearLayers();
-            
             L.geoJSON(deptosData, {
-                style: {
-                    color: '#00A8E8',
-                    weight: 2,
-                    opacity: 0.6,
-                    fillOpacity: 0
-                },
+                style: { color: '#00A8E8', weight: 2, opacity: 0.6, fillOpacity: 0 },
                 onEachFeature: (feature, layer) => {
                     if (feature.properties && feature.properties.DEPARTAMEN) {
                         layer.bindTooltip(feature.properties.DEPARTAMEN);
@@ -777,22 +759,19 @@
         function getFilteredData() {
             return areasData.features.filter(f => {
                 const props = f.properties;
-                
                 if (currentFilters.estado !== 'all' && props.estado !== currentFilters.estado) return false;
                 if (currentFilters.cluster.length > 0 && !currentFilters.cluster.includes('all')) {
                     if (!currentFilters.cluster.includes(props.cluster)) return false;
                 }
                 if (currentFilters.departamento !== 'all' && props.departamento !== currentFilters.departamento) return false;
                 if (currentFilters.mineral !== 'all' && props.tipo_miner !== currentFilters.mineral) return false;
-                
                 return true;
             });
         }
 
         function updateDashboard() {
             const filtered = getFilteredData();
-            console.log(`Filtered: ${filtered.length} areas`);
-            
+            console.log('Filtered:', filtered.length, 'areas');
             updateStats(filtered);
             updateMap(filtered);
             updateCharts(filtered);
@@ -813,12 +792,8 @@
             miningLayer.clearLayers();
             markersMap = {};
             
-            const geoJson = {
-                type: 'FeatureCollection',
-                features: filtered
-            };
-            
-            L.geoJSON(geoJson, {
+            // CORREGIDO: Guardar la referencia del GeoJSON layer
+            geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filtered }, {
                 style: (feature) => {
                     const isDisponible = feature.properties.estado === 'Disponible';
                     return {
@@ -831,37 +806,35 @@
                 },
                 onEachFeature: (feature, layer) => {
                     const props = feature.properties;
-                    const expediente = props.expediente;
-                    
-                    // Guardar referencia
-                    markersMap[expediente] = layer;
+                    markersMap[props.expediente] = layer;
                     
                     const popup = `
                         <div style="font-family: Arial; min-width: 250px;">
-                            <h3 style="color: #002855; margin-bottom: 10px;">${expediente || 'N/A'}</h3>
+                            <h3 style="color: #002855; margin-bottom: 10px;">${props.expediente || 'N/A'}</h3>
                             ${props.cluster ? `<p><b>Cluster:</b> ${props.cluster}</p>` : ''}
                             <p><b>${translations[currentLang].thDepartamento}:</b> ${props.departamento || 'N/A'}</p>
-                            <p><b>${translations[currentLang].thMineral}:</b> ${translateMineral(props.tipo_miner) || 'N/A'}</p>
+                            <p><b>${translations[currentLang].thMineral}:</b> ${translateMineral(props.tipo_miner)}</p>
                             <p><b>${translations[currentLang].thArea}:</b> ${props.area ? Math.round(props.area).toLocaleString() : 'N/A'} ha</p>
-                            <p><b>${translations[currentLang].thEstado}:</b> ${translateStatus(props.estado) || 'N/A'}</p>
+                            <p><b>${translations[currentLang].thEstado}:</b> ${translateStatus(props.estado)}</p>
                         </div>
                     `;
                     layer.bindPopup(popup);
-                    
-                    layer.on('mouseover', function() {
-                        this.setStyle({ fillOpacity: 0.8, weight: 3 });
-                    });
-                    
-                    layer.on('mouseout', function() {
-                        this.setStyle({ fillOpacity: 0.5, weight: 2 });
-                    });
+                    layer.on('mouseover', function() { this.setStyle({ fillOpacity: 0.8, weight: 3 }); });
+                    layer.on('mouseout', function() { this.setStyle({ fillOpacity: 0.5, weight: 2 }); });
                 }
-            }).addTo(miningLayer);
+            });
             
+            geoJsonLayer.addTo(miningLayer);
+            
+            // CORREGIDO: Ahora sí podemos usar getBounds del geoJsonLayer
             if (filtered.length > 0) {
-                const bounds = miningLayer.getBounds();
-                if (bounds.isValid()) {
-                    map.fitBounds(bounds, { padding: [50, 50] });
+                try {
+                    const bounds = geoJsonLayer.getBounds();
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                } catch (e) {
+                    console.log('Could not fit bounds:', e);
                 }
             }
         }
@@ -872,25 +845,24 @@
                 const bounds = layer.getBounds();
                 map.fitBounds(bounds, { padding: [100, 100], maxZoom: 12 });
                 layer.openPopup();
-                
-                // Scroll al mapa
                 document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
         function updateCharts(filtered) {
+            console.log('Updating charts with', filtered.length, 'areas');
             const t = translations[currentLang];
             
-            // Mineral chart
+            // GRÁFICO DE MINERALES
             const mineralData = {};
             filtered.forEach(f => {
-                const mineral = f.properties.tipo_miner || 'Desconocido';
-                const translatedMineral = translateMineral(mineral);
-                if (!mineralData[translatedMineral]) {
-                    mineralData[translatedMineral] = { count: 0, hectares: 0 };
+                const mineralOriginal = f.properties.tipo_miner || 'Unknown';
+                const mineralTraducido = translateMineral(mineralOriginal);
+                if (!mineralData[mineralTraducido]) {
+                    mineralData[mineralTraducido] = { count: 0, hectares: 0 };
                 }
-                mineralData[translatedMineral].count++;
-                mineralData[translatedMineral].hectares += (f.properties.area || 0);
+                mineralData[mineralTraducido].count++;
+                mineralData[mineralTraducido].hectares += (f.properties.area || 0);
             });
             
             if (charts.mineral) charts.mineral.destroy();
@@ -923,25 +895,16 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: {
-                                labels: { color: '#B0C4DE' }
-                            }
+                            legend: { labels: { color: '#B0C4DE', font: { size: 12 } } }
                         },
                         scales: {
                             y: {
                                 type: 'linear',
                                 display: true,
                                 position: 'left',
-                                title: {
-                                    display: true,
-                                    text: t.countLabel,
-                                    color: '#B0C4DE'
-                                },
+                                title: { display: true, text: t.countLabel, color: '#B0C4DE' },
                                 ticks: { color: '#B0C4DE' },
                                 grid: { color: 'rgba(0, 168, 232, 0.1)' }
                             },
@@ -949,11 +912,7 @@
                                 type: 'linear',
                                 display: true,
                                 position: 'right',
-                                title: {
-                                    display: true,
-                                    text: t.hectaresLabel,
-                                    color: '#B0C4DE'
-                                },
+                                title: { display: true, text: t.hectaresLabel, color: '#B0C4DE' },
                                 ticks: { color: '#B0C4DE' },
                                 grid: { drawOnChartArea: false }
                             },
@@ -964,9 +923,10 @@
                         }
                     }
                 });
+                console.log('Mineral chart created');
             }
             
-            // Cluster chart
+            // GRÁFICO DE CLUSTERS
             const clusterData = {};
             filtered.forEach(f => {
                 const cluster = f.properties.cluster || 'Sin Cluster';
@@ -1007,25 +967,16 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: {
-                                labels: { color: '#B0C4DE' }
-                            }
+                            legend: { labels: { color: '#B0C4DE', font: { size: 12 } } }
                         },
                         scales: {
                             y: {
                                 type: 'linear',
                                 display: true,
                                 position: 'left',
-                                title: {
-                                    display: true,
-                                    text: t.countLabel,
-                                    color: '#B0C4DE'
-                                },
+                                title: { display: true, text: t.countLabel, color: '#B0C4DE' },
                                 ticks: { color: '#B0C4DE' },
                                 grid: { color: 'rgba(79, 195, 247, 0.1)' }
                             },
@@ -1033,11 +984,7 @@
                                 type: 'linear',
                                 display: true,
                                 position: 'right',
-                                title: {
-                                    display: true,
-                                    text: t.hectaresLabel,
-                                    color: '#B0C4DE'
-                                },
+                                title: { display: true, text: t.hectaresLabel, color: '#B0C4DE' },
                                 ticks: { color: '#B0C4DE' },
                                 grid: { drawOnChartArea: false }
                             },
@@ -1048,10 +995,12 @@
                         }
                     }
                 });
+                console.log('Cluster chart created');
             }
         }
 
         function updateTable(filtered) {
+            console.log('Updating table with', filtered.length, 'areas');
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             
@@ -1059,7 +1008,6 @@
                 const props = f.properties;
                 const row = tbody.insertRow();
                 
-                // Expediente con link
                 const expedienteCell = row.insertCell(0);
                 const link = document.createElement('a');
                 link.href = '#';
@@ -1073,27 +1021,26 @@
                 
                 row.insertCell(1).textContent = props.cluster || '-';
                 row.insertCell(2).textContent = props.departamento || '-';
-                row.insertCell(3).textContent = translateMineral(props.tipo_miner) || '-';
+                row.insertCell(3).textContent = translateMineral(props.tipo_miner);
                 row.insertCell(4).textContent = props.area ? Math.round(props.area).toLocaleString() : '-';
                 
                 const estadoCell = row.insertCell(5);
                 const badge = document.createElement('span');
                 badge.className = props.estado === 'Disponible' ? 'status-badge status-disponible' : 'status-badge status-no-disponible';
-                badge.textContent = translateStatus(props.estado) || '-';
+                badge.textContent = translateStatus(props.estado);
                 estadoCell.appendChild(badge);
                 
                 row.insertCell(6).textContent = props.rg_tipo || '-';
             });
+            
+            console.log('Table updated with', tbody.rows.length, 'rows');
         }
 
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'es' : 'en';
             const t = translations[currentLang];
             
-            // Update button text
             document.getElementById('langBtn').textContent = currentLang === 'en' ? 'Español' : 'English';
-            
-            // Update all text
             document.getElementById('mainTitle').textContent = t.mainTitle;
             document.getElementById('subtitle').textContent = t.subtitle;
             document.getElementById('labelTotal').textContent = t.labelTotal;
@@ -1124,22 +1071,15 @@
             document.getElementById('thEstado').textContent = t.thEstado;
             document.getElementById('thTipo').textContent = t.thTipo;
             
-            // Update filter options
             const filterEstado = document.getElementById('filterEstado');
             filterEstado.options[0].text = t.filterAll;
             filterEstado.options[1].text = t.filterDisponible;
             filterEstado.options[2].text = t.filterNoDisponible;
             
-            const filterCluster = document.getElementById('filterCluster');
-            filterCluster.options[0].text = t.filterAll;
+            document.getElementById('filterCluster').options[0].text = t.filterAll;
+            document.getElementById('filterDepartamento').options[0].text = t.filterAll;
+            document.getElementById('filterMineral').options[0].text = t.filterAll;
             
-            const filterDepartamento = document.getElementById('filterDepartamento');
-            filterDepartamento.options[0].text = t.filterAll;
-            
-            const filterMineral = document.getElementById('filterMineral');
-            filterMineral.options[0].text = t.filterAll;
-            
-            // Update dashboard
             updateDashboard();
         }
 
@@ -1152,19 +1092,16 @@
             };
             
             document.getElementById('filterEstado').value = 'all';
-            
             const clusterSelect = document.getElementById('filterCluster');
             for (let i = 0; i < clusterSelect.options.length; i++) {
                 clusterSelect.options[i].selected = false;
             }
-            
             document.getElementById('filterDepartamento').value = 'all';
             document.getElementById('filterMineral').value = 'all';
             
             updateDashboard();
         }
 
-        // Event listeners
         document.getElementById('filterEstado').addEventListener('change', (e) => {
             currentFilters.estado = e.target.value;
             updateDashboard();
@@ -1186,7 +1123,6 @@
             updateDashboard();
         });
 
-        // Start
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
