@@ -368,7 +368,7 @@
             border: 1px solid #4CAF50;
         }
         
-        .status-no-disponible {
+        .status-bajo-contrato {
             background: rgba(255, 107, 53, 0.2);
             color: #FF8C5A;
             border: 1px solid #FF6B35;
@@ -428,7 +428,7 @@
                     <select id="filterEstado">
                         <option value="all">Todos</option>
                         <option value="Disponible">Disponible</option>
-                        <option value="No disponible">No Disponible</option>
+                        <option value="Bajo contrato">Bajo Contrato</option>
                     </select>
                 </div>
 
@@ -476,7 +476,7 @@
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #FF6B35;"></div>
-                        <span id="legendNotAvailable">No Disponible</span>
+                        <span id="legendUnderContract">Bajo Contrato</span>
                     </div>
                     <div style="margin-top: 10px; color: #B0C4DE;">
                         <span id="areasCount">0</span> <span id="areasShownText">áreas mostradas</span>
@@ -544,7 +544,7 @@
 
         const statusTranslations = {
             'Disponible': 'Available',
-            'No disponible': 'Not Available'
+            'Bajo contrato': 'Under Contract'
         };
 
         const translations = {
@@ -566,7 +566,7 @@
                 btnDeptsLabel: 'Departments',
                 legendTitle: 'Legend',
                 legendAvailable: 'Available',
-                legendNotAvailable: 'Not Available',
+                legendUnderContract: 'Under Contract',
                 areasShownText: 'areas shown',
                 chartMineralTitle: 'By Mineral Type',
                 chartClusterTitle: 'By Cluster',
@@ -580,7 +580,7 @@
                 thTipo: 'Registry Type',
                 filterAll: 'All',
                 filterDisponible: 'Available',
-                filterNoDisponible: 'Not Available',
+                filterBajoContrato: 'Under Contract',
                 countLabel: 'Count',
                 hectaresLabel: 'Hectares'
             },
@@ -602,7 +602,7 @@
                 btnDeptsLabel: 'Departamentos',
                 legendTitle: 'Leyenda',
                 legendAvailable: 'Disponible',
-                legendNotAvailable: 'No Disponible',
+                legendUnderContract: 'Bajo Contrato',
                 areasShownText: 'áreas mostradas',
                 chartMineralTitle: 'Por Tipo de Mineral',
                 chartClusterTitle: 'Por Cluster',
@@ -616,7 +616,7 @@
                 thTipo: 'Tipo de Registro',
                 filterAll: 'Todos',
                 filterDisponible: 'Disponible',
-                filterNoDisponible: 'No Disponible',
+                filterBajoContrato: 'Bajo Contrato',
                 countLabel: 'Cantidad',
                 hectaresLabel: 'Hectáreas'
             }
@@ -624,7 +624,7 @@
 
         let map, areasData, deptosData, baseLayers = {}, miningLayer, deptsLayer;
         let markersMap = {};
-        let geoJsonLayer = null; // NUEVO: guardar referencia al layer GeoJSON
+        let geoJsonLayer = null;
         let currentFilters = {
             estado: 'all',
             cluster: [],
@@ -792,7 +792,6 @@
             miningLayer.clearLayers();
             markersMap = {};
             
-            // CORREGIDO: Guardar la referencia del GeoJSON layer
             geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filtered }, {
                 style: (feature) => {
                     const isDisponible = feature.properties.estado === 'Disponible';
@@ -826,7 +825,6 @@
             
             geoJsonLayer.addTo(miningLayer);
             
-            // CORREGIDO: Ahora sí podemos usar getBounds del geoJsonLayer
             if (filtered.length > 0) {
                 try {
                     const bounds = geoJsonLayer.getBounds();
@@ -1026,7 +1024,7 @@
                 
                 const estadoCell = row.insertCell(5);
                 const badge = document.createElement('span');
-                badge.className = props.estado === 'Disponible' ? 'status-badge status-disponible' : 'status-badge status-no-disponible';
+                badge.className = props.estado === 'Disponible' ? 'status-badge status-disponible' : 'status-badge status-bajo-contrato';
                 badge.textContent = translateStatus(props.estado);
                 estadoCell.appendChild(badge);
                 
@@ -1058,7 +1056,7 @@
             document.getElementById('btnDeptsLabel').textContent = t.btnDeptsLabel;
             document.getElementById('legendTitle').textContent = t.legendTitle;
             document.getElementById('legendAvailable').textContent = t.legendAvailable;
-            document.getElementById('legendNotAvailable').textContent = t.legendNotAvailable;
+            document.getElementById('legendUnderContract').textContent = t.legendUnderContract;
             document.getElementById('areasShownText').textContent = t.areasShownText;
             document.getElementById('chartMineralTitle').textContent = t.chartMineralTitle;
             document.getElementById('chartClusterTitle').textContent = t.chartClusterTitle;
@@ -1074,7 +1072,7 @@
             const filterEstado = document.getElementById('filterEstado');
             filterEstado.options[0].text = t.filterAll;
             filterEstado.options[1].text = t.filterDisponible;
-            filterEstado.options[2].text = t.filterNoDisponible;
+            filterEstado.options[2].text = t.filterBajoContrato;
             
             document.getElementById('filterCluster').options[0].text = t.filterAll;
             document.getElementById('filterDepartamento').options[0].text = t.filterAll;
