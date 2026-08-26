@@ -368,12 +368,6 @@
             border: 1px solid #4CAF50;
         }
         
-        .status-bajo-contrato {
-            background: rgba(255, 107, 53, 0.2);
-            color: #FF8C5A;
-            border: 1px solid #FF6B35;
-        }
-        
         @media (max-width: 1024px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -422,15 +416,6 @@
         <div class="main-grid">
             <div class="filters">
                 <div class="filter-title" id="filtersTitle">Filtros</div>
-                
-                <div class="filter-group">
-                    <label class="filter-label" id="labelEstado">Estado</label>
-                    <select id="filterEstado">
-                        <option value="all">Todos</option>
-                        <option value="Disponible">Disponible</option>
-                        <option value="Bajo contrato">Bajo Contrato</option>
-                    </select>
-                </div>
 
                 <div class="filter-group">
                     <label class="filter-label" id="labelCluster">Cluster</label>
@@ -473,10 +458,6 @@
                     <div class="legend-item">
                         <div class="legend-color" style="background: #4CAF50;"></div>
                         <span id="legendAvailable">Disponible</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #FF6B35;"></div>
-                        <span id="legendUnderContract">Bajo Contrato</span>
                     </div>
                     <div style="margin-top: 10px; color: #B0C4DE;">
                         <span id="areasCount">0</span> <span id="areasShownText">áreas mostradas</span>
@@ -524,10 +505,12 @@
     </div>
 
     <script>
+        // Diccionario de traducción de minerales
         const mineralTranslations = {
             'Oro aluvional': 'Alluvial Gold',
             'Borato y sales de boro': 'Borate and Boron Salts',
             'Polimetálico': 'Polymetallic',
+            'Polimetalico': 'Polymetallic',
             'Litio': 'Lithium',
             'Cobre': 'Copper',
             'Plata': 'Silver',
@@ -536,15 +519,22 @@
             'Plomo': 'Lead',
             'Diseminado de oro': 'Disseminated Gold',
             'Diseminado de oro y cobre': 'Disseminated Gold and Copper',
+            'Diseminado de oro, plata y cobre': 'Disseminated Gold, Silver and Copper',
+            'Diseminado de plata y zinc': 'Disseminated Silver and Zinc',
             'Disem. Polimetalico de plata y oro': 'Disseminated Polymetallic Silver and Gold',
             'REE': 'REE',
             'Carbonatos de litio': 'Lithium Carbonates',
-            'Polimetalico': 'Polymetallic'
+            'Litio y potasio': 'Lithium and Potassium',
+            'Alcalinos complejos': 'Complex Alkaline',
+            'Epitermal de metales preciosos': 'Epithermal Precious Metals',
+            'Salar': 'Salt Flat',
+            'Sulfuros masivos': 'Massive Sulfides',
+            'Sin especificar': 'Unspecified'
         };
 
         const statusTranslations = {
             'Disponible': 'Available',
-            'Bajo contrato': 'Under Contract'
+            'No disponible': 'Not Available'
         };
 
         const translations = {
@@ -555,7 +545,6 @@
                 labelHectares: 'Total Hectares',
                 labelAvailable: 'Available',
                 filtersTitle: 'Filters',
-                labelEstado: 'Status',
                 labelCluster: 'Cluster',
                 labelDepartamento: 'Department',
                 labelMineral: 'Mineral Type',
@@ -566,7 +555,6 @@
                 btnDeptsLabel: 'Departments',
                 legendTitle: 'Legend',
                 legendAvailable: 'Available',
-                legendUnderContract: 'Under Contract',
                 areasShownText: 'areas shown',
                 chartMineralTitle: 'By Mineral Type',
                 chartClusterTitle: 'By Cluster',
@@ -579,8 +567,6 @@
                 thEstado: 'Status',
                 thTipo: 'Registry Type',
                 filterAll: 'All',
-                filterDisponible: 'Available',
-                filterBajoContrato: 'Under Contract',
                 countLabel: 'Count',
                 hectaresLabel: 'Hectares'
             },
@@ -591,7 +577,6 @@
                 labelHectares: 'Hectáreas Totales',
                 labelAvailable: 'Disponibles',
                 filtersTitle: 'Filtros',
-                labelEstado: 'Estado',
                 labelCluster: 'Cluster',
                 labelDepartamento: 'Departamento',
                 labelMineral: 'Tipo de Mineral',
@@ -602,7 +587,6 @@
                 btnDeptsLabel: 'Departamentos',
                 legendTitle: 'Leyenda',
                 legendAvailable: 'Disponible',
-                legendUnderContract: 'Bajo Contrato',
                 areasShownText: 'áreas mostradas',
                 chartMineralTitle: 'Por Tipo de Mineral',
                 chartClusterTitle: 'Por Cluster',
@@ -615,8 +599,6 @@
                 thEstado: 'Estado',
                 thTipo: 'Tipo de Registro',
                 filterAll: 'Todos',
-                filterDisponible: 'Disponible',
-                filterBajoContrato: 'Bajo Contrato',
                 countLabel: 'Cantidad',
                 hectaresLabel: 'Hectáreas'
             }
@@ -626,7 +608,6 @@
         let markersMap = {};
         let geoJsonLayer = null;
         let currentFilters = {
-            estado: 'all',
             cluster: [],
             departamento: 'all',
             mineral: 'all'
@@ -659,10 +640,18 @@
                     fetch('departamentos.geojson')
                 ]);
                 
-                areasData = await areasResponse.json();
+                const areasRaw = await areasResponse.json();
                 deptosData = await deptosResponse.json();
                 
-                console.log('Loaded', areasData.features.length, 'mining areas');
+                // Ocultar por completo las áreas "No disponible": el dashboard
+                // solo trabaja con las que están en estado "Disponible".
+                areasData = {
+                    type: 'FeatureCollection',
+                    features: areasRaw.features.filter(f => f.properties.estado === 'Disponible')
+                };
+                
+                console.log('Loaded', areasRaw.features.length, 'total areas in file');
+                console.log('Showing', areasData.features.length, 'available areas (No disponible hidden)');
                 console.log('Loaded', deptosData.features.length, 'departments');
                 
                 initMap();
@@ -723,8 +712,9 @@
             L.geoJSON(deptosData, {
                 style: { color: '#00A8E8', weight: 2, opacity: 0.6, fillOpacity: 0 },
                 onEachFeature: (feature, layer) => {
-                    if (feature.properties && feature.properties.DEPARTAMEN) {
-                        layer.bindTooltip(feature.properties.DEPARTAMEN);
+                    // El campo con el nombre del departamento se llama "Name" en este archivo
+                    if (feature.properties && feature.properties.Name) {
+                        layer.bindTooltip(feature.properties.Name);
                     }
                 }
             }).addTo(deptsLayer);
@@ -759,7 +749,6 @@
         function getFilteredData() {
             return areasData.features.filter(f => {
                 const props = f.properties;
-                if (currentFilters.estado !== 'all' && props.estado !== currentFilters.estado) return false;
                 if (currentFilters.cluster.length > 0 && !currentFilters.cluster.includes('all')) {
                     if (!currentFilters.cluster.includes(props.cluster)) return false;
                 }
@@ -779,7 +768,7 @@
         }
 
         function updateStats(filtered) {
-            const available = filtered.filter(f => f.properties.estado === 'Disponible').length;
+            const available = filtered.length; // todas las que quedan son "Disponible"
             const totalHa = filtered.reduce((sum, f) => sum + (f.properties.area || 0), 0);
             
             document.getElementById('totalAreas').textContent = filtered.length;
@@ -793,16 +782,13 @@
             markersMap = {};
             
             geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filtered }, {
-                style: (feature) => {
-                    const isDisponible = feature.properties.estado === 'Disponible';
-                    return {
-                        fillColor: isDisponible ? '#4CAF50' : '#FF6B35',
-                        fillOpacity: 0.5,
-                        color: isDisponible ? '#2E7D32' : '#D84315',
-                        weight: 2,
-                        opacity: 0.8
-                    };
-                },
+                style: () => ({
+                    fillColor: '#4CAF50',
+                    fillOpacity: 0.5,
+                    color: '#2E7D32',
+                    weight: 2,
+                    opacity: 0.8
+                }),
                 onEachFeature: (feature, layer) => {
                     const props = feature.properties;
                     markersMap[props.expediente] = layer;
@@ -921,7 +907,6 @@
                         }
                     }
                 });
-                console.log('Mineral chart created');
             }
             
             // GRÁFICO DE CLUSTERS
@@ -993,12 +978,10 @@
                         }
                     }
                 });
-                console.log('Cluster chart created');
             }
         }
 
         function updateTable(filtered) {
-            console.log('Updating table with', filtered.length, 'areas');
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             
@@ -1024,14 +1007,12 @@
                 
                 const estadoCell = row.insertCell(5);
                 const badge = document.createElement('span');
-                badge.className = props.estado === 'Disponible' ? 'status-badge status-disponible' : 'status-badge status-bajo-contrato';
+                badge.className = 'status-badge status-disponible';
                 badge.textContent = translateStatus(props.estado);
                 estadoCell.appendChild(badge);
                 
                 row.insertCell(6).textContent = props.rg_tipo || '-';
             });
-            
-            console.log('Table updated with', tbody.rows.length, 'rows');
         }
 
         function toggleLanguage() {
@@ -1045,7 +1026,6 @@
             document.getElementById('labelHectares').textContent = t.labelHectares;
             document.getElementById('labelAvailable').textContent = t.labelAvailable;
             document.getElementById('filtersTitle').textContent = t.filtersTitle;
-            document.getElementById('labelEstado').textContent = t.labelEstado;
             document.getElementById('labelCluster').textContent = t.labelCluster;
             document.getElementById('labelDepartamento').textContent = t.labelDepartamento;
             document.getElementById('labelMineral').textContent = t.labelMineral;
@@ -1056,7 +1036,6 @@
             document.getElementById('btnDeptsLabel').textContent = t.btnDeptsLabel;
             document.getElementById('legendTitle').textContent = t.legendTitle;
             document.getElementById('legendAvailable').textContent = t.legendAvailable;
-            document.getElementById('legendUnderContract').textContent = t.legendUnderContract;
             document.getElementById('areasShownText').textContent = t.areasShownText;
             document.getElementById('chartMineralTitle').textContent = t.chartMineralTitle;
             document.getElementById('chartClusterTitle').textContent = t.chartClusterTitle;
@@ -1069,11 +1048,6 @@
             document.getElementById('thEstado').textContent = t.thEstado;
             document.getElementById('thTipo').textContent = t.thTipo;
             
-            const filterEstado = document.getElementById('filterEstado');
-            filterEstado.options[0].text = t.filterAll;
-            filterEstado.options[1].text = t.filterDisponible;
-            filterEstado.options[2].text = t.filterBajoContrato;
-            
             document.getElementById('filterCluster').options[0].text = t.filterAll;
             document.getElementById('filterDepartamento').options[0].text = t.filterAll;
             document.getElementById('filterMineral').options[0].text = t.filterAll;
@@ -1083,13 +1057,11 @@
 
         function resetFilters() {
             currentFilters = {
-                estado: 'all',
                 cluster: [],
                 departamento: 'all',
                 mineral: 'all'
             };
             
-            document.getElementById('filterEstado').value = 'all';
             const clusterSelect = document.getElementById('filterCluster');
             for (let i = 0; i < clusterSelect.options.length; i++) {
                 clusterSelect.options[i].selected = false;
@@ -1099,11 +1071,6 @@
             
             updateDashboard();
         }
-
-        document.getElementById('filterEstado').addEventListener('change', (e) => {
-            currentFilters.estado = e.target.value;
-            updateDashboard();
-        });
 
         document.getElementById('filterCluster').addEventListener('change', (e) => {
             const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
